@@ -125,7 +125,7 @@ function App() {
         {/* メッセージ表示エリア */}
         {message && <p style={{ color: 'yellow' }}>{message}</p>}
 
-        {/* ユーザー登録フォーム */}
+        {/* ユーザー登録フォーム. */}
         <section style={{ marginBottom: '40px', border: '1px solid #ccc', padding: '20px', borderRadius: '8px' }}>
           <h2>Create New User</h2>
           <form onSubmit={handleCreateUser}>
