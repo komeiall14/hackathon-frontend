@@ -255,7 +255,7 @@ function App() {
         {/* PostFormに投稿成功時のコールバックとして fetchPosts を渡す */}
         {loginUser && <PostForm loginUser={loginUser} onPostSuccess={fetchPosts} />}
 
-        {/* PostListに投稿データと更新用関数を渡す */}
+        {/* PostListに投稿データと更新用関数を渡す. */}
         <PostList 
           posts={posts} 
           isLoading={isLoading} 
