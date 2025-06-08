@@ -7,6 +7,8 @@ import { PostList, Post } from './PostList';
 import { PostForm } from './PostForm';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
+import { Routes, Route } from 'react-router-dom'; // ★ インポート
+import { UserProfile } from './UserProfile';     // ★ インポート
 
 interface User {
   id: string;
@@ -27,11 +29,10 @@ function App() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  // ★★★ モーダル表示用の状態を追加 ★★★
   const [showUserManagement, setShowUserManagement] = useState<boolean>(false);
   
   const fetchPosts = useCallback(async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(`${BACKEND_API_URL}/posts`);
       if (!response.ok) {
@@ -136,33 +137,43 @@ function App() {
   };
 
   return (
-    <> {/* フラグメントで全体を囲む */}
+    <>
       <div className="app-container">
         <Toaster position="top-center" />
         
         <aside className="left-sidebar">
           <h2>ナビゲーション</h2>
           <LoginForm />
-          {/* ★★★ ユーザー管理モーダルを開くボタン ★★★ */}
           <button className="sidebar-button" onClick={() => setShowUserManagement(true)}>
             ユーザー管理
           </button>
         </aside>
       
         <main className="main-content">
-          <h1>ホーム</h1>
-          {loginUser && (
-            <section className="post-form-section">
-              <PostForm loginUser={loginUser} onPostSuccess={fetchPosts} />
-            </section>
-          )}
-          <PostList 
-            posts={posts} 
-            isLoading={isLoading} 
-            error={error} 
-            onUpdate={fetchPosts}
-            loginUser={loginUser} 
-          />
+          {/* ★ Routesで囲み、URLのパスに応じて表示するコンポーネントを切り替える */}
+          <Routes>
+            {/* ルートパス ("/") の場合 */}
+            <Route path="/" element={
+              <>
+                <h1>ホーム</h1>
+                {loginUser && (
+                  <section className="post-form-section">
+                    <PostForm loginUser={loginUser} onPostSuccess={fetchPosts} />
+                  </section>
+                )}
+                <PostList 
+                  posts={posts} 
+                  isLoading={isLoading} 
+                  error={error} 
+                  onUpdate={fetchPosts}
+                  loginUser={loginUser} 
+                />
+              </>
+            } />
+            
+            {/* "/users/:userId" の場合 */}
+            <Route path="/users/:userId" element={<UserProfile />} />
+          </Routes>
         </main>
         
         <aside className="right-sidebar">
@@ -196,7 +207,6 @@ function App() {
         </aside>
       </div>
 
-      {/* ★★★ ユーザー管理モーダルの表示ロジック ★★★ */}
       {showUserManagement && (
         <div className="modal-overlay" onClick={() => setShowUserManagement(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>

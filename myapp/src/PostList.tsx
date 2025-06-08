@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { Link } from 'react-router-dom'; 
 
 export interface Post {
   post_id: string;
@@ -142,10 +143,12 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
           <div key={post.post_id} className="post-item" onClick={() => toggleRepliesView(post.post_id)}>
             <div className="post-avatar"></div>
             <div className="post-body">
-              <div className="post-header">
+            <div className="post-header">
+              <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{textDecoration: 'none', color: 'inherit'}}>
                 <span className="user-name">{post.user_name}</span>
-                <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
-              </div>
+              </Link>
+              <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
+            </div>
               <p className="post-content">{post.content}</p>
               <div className="post-actions">
                 <button onClick={(e) => { e.stopPropagation(); handleReplyButtonClick(post.post_id); }}>
