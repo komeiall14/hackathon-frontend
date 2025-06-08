@@ -3,12 +3,11 @@ import './App.css';
 import { LoginForm } from './LoginForm';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
 import { fireAuth } from './firebase'; 
-import { PostList, Post } from './PostList'; // Post 型をインポート
+import { PostList, Post } from './PostList';
 import { PostForm } from './PostForm';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
-// APIレスポンスの型定義
 interface User {
   id: string;
   name: string;
@@ -16,24 +15,23 @@ interface User {
 }
 
 function App() {
-  // 環境変数からバックエンドのURLを取得
   const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-  const [users, setUsers] = useState<User[]>([]); // ユーザー一覧を保持するState
-  const [name, setName] = useState<string>('');   // ユーザー名入力用State
-  const [age, setAge] = useState<string>('');     // 年齢入力用State (文字列として受け取り、後に数値に変換)
-  const [searchName, setSearchName] = useState<string>(''); // 検索用ユーザー名State
-  const [searchResults, setSearchResults] = useState<User[]>([]); // 検索結果を保持するState
-  const [message, setMessage] = useState<string>(''); // ユーザーへのメッセージ表示用State
+  const [users, setUsers] = useState<User[]>([]); 
+  const [name, setName] = useState<string>('');
+  const [age, setAge] = useState<string>('');
+  const [searchName, setSearchName] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [message, setMessage] = useState<string>('');
   const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null); 
-
-  // --- PostListから移動してきた状態とロジック ---
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // ★★★ モーダル表示用の状態を追加 ★★★
+  const [showUserManagement, setShowUserManagement] = useState<boolean>(false);
   
   const fetchPosts = useCallback(async () => {
-    // データ取得中の状態にしたい場合はここでsetIsLoading(true)を呼ぶ
     try {
       const response = await fetch(`${BACKEND_API_URL}/posts`);
       if (!response.ok) {
@@ -47,29 +45,20 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [BACKEND_API_URL]); // BACKEND_API_URL を依存配列に追加
+  }, [BACKEND_API_URL]);
 
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
-  // --- ここまでが移動してきた部分 ---
 
-  // アプリケーション起動時に全ユーザーを取得し、認証状態を監視
   useEffect(() => {
     fetchAllUsers();
     const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
-      if (user) {
-        setLoginUser(user);
-        console.log("ログイン状態: ログイン中", user);
-      } else {
-        setLoginUser(null);
-        console.log("ログイン状態: 未ログイン");
-      }
+      setLoginUser(user);
     });
     return () => unsubscribe();
-  }, []); // 空の依存配列でマウント時に一度だけ実行
+  }, []);
 
-  // 全ユーザー取得関数
   const fetchAllUsers = async () => {
     setMessage('Loading users...');
     try {
@@ -86,10 +75,8 @@ function App() {
     }
   };
 
-  // ユーザー作成（POST）関数
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name.trim()) {
       setMessage('Name cannot be empty.');
       return;
@@ -103,26 +90,20 @@ function App() {
       setMessage('Age must be a valid number between 0 and 150.');
       return;
     }
-
     setMessage('Creating user...');
     try {
       const response = await fetch(`${BACKEND_API_URL}/user`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), age: ageNum }),
       });
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to create user: ${response.statusText} - ${errorText}`);
       }
-
       const data = await response.json();
       console.log('User created successfully:', data);
       setMessage(`User created with ID: ${data.id}`);
-
       setName('');
       setAge('');
       fetchAllUsers();
@@ -132,7 +113,6 @@ function App() {
     }
   };
 
-  // 特定ユーザー検索（GET with query parameter）関数
   const handleSearchUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('Searching user...');
@@ -151,120 +131,108 @@ function App() {
       setMessage(`Found ${data.length} user(s) for "${searchName}".`);
     } catch (error) {
       console.error('Error searching user:', error);
-      setMessage(`Error searching user: ${error instanceof Error ? error.message : String(error)}`);
+      setMessage(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
   return (
-    <div className="App">
-      <Toaster position="top-center" />
-      <header className="App-header">
-        <h1>User Management App</h1>
-
-        <LoginForm />
-        {/* メッセージ表示エリア */}
-        {message && <p style={{ color: 'yellow' }}>{message}</p>}
-
-        {/* ユーザー登録フォーム */}
-        <section style={{ marginBottom: '40px', border: '1px solid #ccc', padding: '20px', borderRadius: '8px' }}>
-          <h2>Create New User</h2>
-          <form onSubmit={handleCreateUser}>
-            <div>
-              <label htmlFor="name">Name:</label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter user name"
-                required
-                maxLength={50}
-              />
-            </div>
-            <div style={{ marginTop: '10px' }}>
-              <label htmlFor="age">Age:</label>
-              <input
-                id="age"
-                type="number"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="Enter age"
-                required
-                min="0"
-                max="150"
-              />
-            </div>
-            <button type="submit" style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px' }}>
-              Add User
-            </button>
-          </form>
-        </section>
-
-        {/* ユーザー検索フォーム */}
-        <section style={{ marginBottom: '40px', border: '1px solid #ccc', padding: '20px', borderRadius: '8px' }}>
-          <h2>Search User by Name</h2>
-          <form onSubmit={handleSearchUser}>
-            <div>
-              <label htmlFor="searchName">Name:</label>
-              <input
-                id="searchName"
-                type="text"
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-                placeholder="Enter name to search"
-              />
-            </div>
-            <button type="submit" style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px' }}>
-              Search
-            </button>
-          </form>
-          {searchResults.length > 0 && (
-            <div style={{ marginTop: '20px' }}>
-              <h3>Search Results:</h3>
-              <ul style={{ listStyleType: 'none', padding: 0 }}>
-                {searchResults.map((user) => (
-                  <li key={user.id} style={{ borderBottom: '1px dashed #555', padding: '5px 0' }}>
-                    ID: {user.id}, Name: {user.name}, Age: {user.age}
-                  </li>
-                ))}
-              </ul>
-            </div>
+    <> {/* フラグメントで全体を囲む */}
+      <div className="app-container">
+        <Toaster position="top-center" />
+        
+        <aside className="left-sidebar">
+          <h2>ナビゲーション</h2>
+          <LoginForm />
+          {/* ★★★ ユーザー管理モーダルを開くボタン ★★★ */}
+          <button className="sidebar-button" onClick={() => setShowUserManagement(true)}>
+            ユーザー管理
+          </button>
+        </aside>
+      
+        <main className="main-content">
+          <h1>ホーム</h1>
+          {loginUser && (
+            <section className="post-form-section">
+              <PostForm loginUser={loginUser} onPostSuccess={fetchPosts} />
+            </section>
           )}
-          {searchResults.length === 0 && searchName.trim() !== '' && message.includes('Found 0 user(s)') && (
-              <p style={{marginTop: '10px'}}>No users found with that name.</p>
-          )}
-        </section>
+          <PostList 
+            posts={posts} 
+            isLoading={isLoading} 
+            error={error} 
+            onUpdate={fetchPosts}
+            loginUser={loginUser} 
+          />
+        </main>
+        
+        <aside className="right-sidebar">
+          <section style={{padding: '10px'}}>
+            <h2>ユーザー検索</h2>
+            <form onSubmit={handleSearchUser}>
+              <div>
+                <input
+                  id="searchName"
+                  type="text"
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  placeholder="ユーザー名で検索..."
+                  style={{width: '90%', padding: '8px', borderRadius: '20px', border: '1px solid #38444d', backgroundColor: '#203444', color: 'white'}}
+                />
+              </div>
+            </form>
+            {searchResults.length > 0 && (
+              <div style={{ marginTop: '20px' }}>
+                <h3>検索結果</h3>
+                <ul style={{ listStyleType: 'none', padding: 0 }}>
+                  {searchResults.map((user) => (
+                    <li key={user.id} style={{ borderBottom: '1px dashed #555', padding: '5px 0', fontSize: '14px' }}>
+                      Name: {user.name}, Age: {user.age}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        </aside>
+      </div>
 
+      {/* ★★★ ユーザー管理モーダルの表示ロジック ★★★ */}
+      {showUserManagement && (
+        <div className="modal-overlay" onClick={() => setShowUserManagement(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close-button" onClick={() => setShowUserManagement(false)}>×</button>
+            <h2>ユーザー管理</h2>
+            {message && <p style={{ color: 'yellow', padding: '0 15px' }}>{message}</p>}
+            
+            <section className="modal-section">
+              <h3>Create New User</h3>
+              <form onSubmit={handleCreateUser}>
+                <div>
+                  <label htmlFor="name-modal">Name:</label>
+                  <input id="name-modal" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div style={{ marginTop: '10px' }}>
+                  <label htmlFor="age-modal">Age:</label>
+                  <input id="age-modal" type="number" value={age} onChange={(e) => setAge(e.target.value)} required />
+                </div>
+                <button type="submit">Add User</button>
+              </form>
+            </section>
 
-        {/* 全ユーザー一覧表示 */}
-        <section style={{ border: '1px solid #ccc', padding: '20px', borderRadius: '8px' }}>
-          <h2>All Registered Users</h2>
-          {users.length === 0 ? (
-            <p>No users found. Try adding one!</p>
-          ) : (
-            <ul style={{ listStyleType: 'none', padding: 0 }}>
-              {users.map((user) => (
-                <li key={user.id} style={{ borderBottom: '1px dashed #555', padding: '5px 0' }}>
-                  ID: {user.id}, Name: {user.name}, Age: {user.age}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* PostFormに投稿成功時のコールバックとして fetchPosts を渡す */}
-        {loginUser && <PostForm loginUser={loginUser} onPostSuccess={fetchPosts} />}
-
-        {/* PostListに投稿データと更新用関数を渡す. */}
-        <PostList 
-          posts={posts} 
-          isLoading={isLoading} 
-          error={error} 
-          onUpdate={fetchPosts}
-        />
-
-      </header>
-    </div>
+            <section className="modal-section">
+              <h3>All Registered Users</h3>
+              <div className="user-list">
+                {users.length === 0 ? <p>No users found.</p> : (
+                  <ul>{users.map((user) => (
+                      <li key={user.id}>ID: {user.id.substring(0,8)}..., Name: {user.name}, Age: {user.age}</li>
+                  ))}</ul>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
