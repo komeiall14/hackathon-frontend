@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react'; // useState と useEffect をインポート
-import './App.css'; // 既存のCSSをインポート
+import React, { useState, useEffect, useCallback } from 'react';
+import './App.css';
+import { LoginForm } from './LoginForm';
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
+import { fireAuth } from './firebase'; 
+import { PostList, Post } from './PostList'; // Post 型をインポート
+import { PostForm } from './PostForm';
+import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 // APIレスポンスの型定義
 interface User {
@@ -10,8 +17,6 @@ interface User {
 
 function App() {
   // 環境変数からバックエンドのURLを取得
-  // Vercelデプロイ時: process.env.REACT_APP_BACKEND_URL が使われる
-  // ローカル開発時: 'http://localhost:8080' が使われる (Cloud Run Proxyを8080で動かす場合)
   const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
   const [users, setUsers] = useState<User[]>([]); // ユーザー一覧を保持するState
@@ -20,12 +25,49 @@ function App() {
   const [searchName, setSearchName] = useState<string>(''); // 検索用ユーザー名State
   const [searchResults, setSearchResults] = useState<User[]>([]); // 検索結果を保持するState
   const [message, setMessage] = useState<string>(''); // ユーザーへのメッセージ表示用State
+  const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null); 
 
+  // --- PostListから移動してきた状態とロジック ---
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchPosts = useCallback(async () => {
+    // データ取得中の状態にしたい場合はここでsetIsLoading(true)を呼ぶ
+    try {
+      const response = await fetch(`${BACKEND_API_URL}/posts`);
+      if (!response.ok) {
+        throw new Error('データの取得に失敗しました。');
+      }
+      const data: Post[] = await response.json();
+      setPosts(data);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message); 
+    } finally {
+      setIsLoading(false);
+    }
+  }, [BACKEND_API_URL]); // BACKEND_API_URL を依存配列に追加
 
-  // アプリケーション起動時に全ユーザーを取得
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+  // --- ここまでが移動してきた部分 ---
+
+  // アプリケーション起動時に全ユーザーを取得し、認証状態を監視
   useEffect(() => {
     fetchAllUsers();
-  }, []); // 空の依存配列はコンポーネントがマウントされた時に一度だけ実行されることを意味する
+    const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
+      if (user) {
+        setLoginUser(user);
+        console.log("ログイン状態: ログイン中", user);
+      } else {
+        setLoginUser(null);
+        console.log("ログイン状態: 未ログイン");
+      }
+    });
+    return () => unsubscribe();
+  }, []); // 空の依存配列でマウント時に一度だけ実行
 
   // 全ユーザー取得関数
   const fetchAllUsers = async () => {
@@ -46,9 +88,8 @@ function App() {
 
   // ユーザー作成（POST）関数
   const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault(); // フォームのデフォルトの送信動作を防止
+    e.preventDefault();
 
-    // バリデーション
     if (!name.trim()) {
       setMessage('Name cannot be empty.');
       return;
@@ -58,7 +99,7 @@ function App() {
       return;
     }
     const ageNum = parseInt(age, 10);
-    if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) { // 年齢の妥当性チェック（例: 0から150歳）
+    if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
       setMessage('Age must be a valid number between 0 and 150.');
       return;
     }
@@ -74,7 +115,6 @@ function App() {
       });
 
       if (!response.ok) {
-        // バックエンドからのエラーメッセージを解析
         const errorText = await response.text();
         throw new Error(`Failed to create user: ${response.statusText} - ${errorText}`);
       }
@@ -83,8 +123,7 @@ function App() {
       console.log('User created successfully:', data);
       setMessage(`User created with ID: ${data.id}`);
 
-      // ユーザーリストを再取得してUIを更新
-      setName(''); // 入力フィールドをクリア
+      setName('');
       setAge('');
       fetchAllUsers();
     } catch (error) {
@@ -95,7 +134,7 @@ function App() {
 
   // 特定ユーザー検索（GET with query parameter）関数
   const handleSearchUser = async (e: React.FormEvent) => {
-    e.preventDefault(); // フォームのデフォルトの送信動作を防止
+    e.preventDefault();
     setMessage('Searching user...');
     if (!searchName.trim()) {
       setMessage('Please enter a name to search.');
@@ -116,16 +155,17 @@ function App() {
     }
   };
 
-
   return (
     <div className="App">
+      <Toaster position="top-center" />
       <header className="App-header">
         <h1>User Management App</h1>
 
+        <LoginForm />
         {/* メッセージ表示エリア */}
         {message && <p style={{ color: 'yellow' }}>{message}</p>}
 
-        {/* ユーザー登録フォーム. */}
+        {/* ユーザー登録フォーム */}
         <section style={{ marginBottom: '40px', border: '1px solid #ccc', padding: '20px', borderRadius: '8px' }}>
           <h2>Create New User</h2>
           <form onSubmit={handleCreateUser}>
@@ -211,6 +251,18 @@ function App() {
             </ul>
           )}
         </section>
+
+        {/* PostFormに投稿成功時のコールバックとして fetchPosts を渡す */}
+        {loginUser && <PostForm loginUser={loginUser} onPostSuccess={fetchPosts} />}
+
+        {/* PostListに投稿データと更新用関数を渡す */}
+        <PostList 
+          posts={posts} 
+          isLoading={isLoading} 
+          error={error} 
+          onUpdate={fetchPosts}
+        />
+
       </header>
     </div>
   );
