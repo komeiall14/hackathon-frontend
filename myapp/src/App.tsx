@@ -13,7 +13,8 @@ import { UserProfile } from './UserProfile';     // ★ インポート
 interface User {
   id: string;
   name: string;
-  age: number;
+  age: number | null; // nullの可能性がある
+  firebase_uid: string | null; // nullの可能性がある
 }
 
 function App() {
@@ -234,7 +235,9 @@ function App() {
               <div className="user-list">
                 {users.length === 0 ? <p>No users found.</p> : (
                   <ul>{users.map((user) => (
-                      <li key={user.id}>ID: {user.id.substring(0,8)}..., Name: {user.name}, Age: {user.age}</li>
+                      <li key={user.id}>
+                        Name: {user.name} | Age: {user.age || 'N/A'} | Firebase UID: {user.firebase_uid || 'N/A'}
+                      </li>
                   ))}</ul>
                 )}
               </div>
