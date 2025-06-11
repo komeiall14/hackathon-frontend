@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
-import { Link } from 'react-router-dom'; 
+import { Link } from 'react-router-dom';
+// ★ 1. react-iconsから必要なアイコンをインポートします
+import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart } from 'react-icons/fa';
+import { fireAuth } from './firebase';
 
+// ★ 2. Postの型定義にimage_urlを追加します
 export interface Post {
   post_id: string;
   user_id: string;
   user_name: string;
   content: string;
+  image_url: string | null; // 画像URL用のフィールドを追加
   created_at: string;
   like_count: number;
   is_liked_by_me: boolean;
@@ -31,18 +36,17 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const handleLike = async (postId: string, isLiked: boolean) => {
+    if (!loginUser) { toast.error('ログインしてください。'); return; }
+    const token = await loginUser.getIdToken();
     const method = isLiked ? 'DELETE' : 'POST';
     try {
       const response = await fetch(`${BACKEND_API_URL}/api/posts/like/${postId}`, {
         method: method,
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (!response.ok) {
-        throw new Error('いいねの操作に失敗しました。');
-      }
+      if (!response.ok) { throw new Error('いいねの操作に失敗しました。'); }
       onUpdate();
-    } catch (err: any) {
-      toast.error(err.message); 
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
   
   const handleReplyButtonClick = (postId: string) => {
@@ -52,25 +56,30 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
 
   const handleReplySubmit = async (e: React.FormEvent, parentPostId: string) => {
     e.preventDefault();
-    if (!replyContent.trim()) {
-        toast.error("返信内容を入力してください。");
-        return;
-    };
+    if (!replyContent.trim()) { toast.error("返信内容を入力してください。"); return; }
+    if (!loginUser) { toast.error('ログインしてください。'); return; }
+    const token = await loginUser.getIdToken();
+
     try {
       const response = await fetch(`${BACKEND_API_URL}/api/posts/reply/${parentPostId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: replyContent.trim() }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          content: replyContent.trim(),
+          user_name: loginUser.displayName || "名無しさん"
+        }),
       });
       if (!response.ok) { throw new Error('リプライの投稿に失敗しました。'); }
       setReplyingToPostId(null);
       setReplyContent('');
       onUpdate();
       toast.success('リプライを投稿しました！'); 
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
+
 
   const toggleRepliesView = async (postId: string) => {
     if (visibleReplies[postId]) {
@@ -92,34 +101,33 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   };
 
   const handleGenerateReply = async (originalPostContent: string) => {
+    if (!loginUser) { toast.error('ログインしてください。'); return; }
+    const token = await loginUser.getIdToken();
     setIsGenerating(true);
     try {
         const response = await fetch(`${BACKEND_API_URL}/api/posts/suggest-reply`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ original_post_content: originalPostContent }),
         });
-        if (!response.ok) {
-            throw new Error('AIによる返信生成に失敗しました。');
-        }
+        if (!response.ok) { throw new Error('AIによる返信生成に失敗しました。'); }
         const data = await response.json();
-        if (data.suggestion) {
-            setReplyContent(String(data.suggestion)); 
-        }
-    } catch (err: any) {
-      toast.error(err.message); 
-    } finally {
-        setIsGenerating(false);
-    }
+        if (data.suggestion) { setReplyContent(String(data.suggestion)); }
+    } catch (err: any) { toast.error(err.message); } finally { setIsGenerating(false); }
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!window.confirm("この投稿を本当に削除しますか？")) {
-      return;
-    }
+    if (!loginUser) { toast.error('ログインしてください。'); return; }
+    if (!window.confirm("この投稿を本当に削除しますか？")) { return; }
+    const token = await loginUser.getIdToken();
+
     try {
       const response = await fetch(`${BACKEND_API_URL}/api/posts/delete/${postId}`, {
         method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) {
         const errorData = await response.text();
@@ -127,10 +135,9 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
       }
       toast.success('投稿を削除しました。');
       onUpdate();
-    } catch (err: any) {
-      toast.error(`エラー: ${err.message}`);
-    }
+    } catch (err: any) { toast.error(`エラー: ${err.message}`); }
   };
+
 
   if (isLoading) return <div style={{padding: '20px'}}>投稿を読み込んでいます...</div>;
   if (error) return <div style={{padding: '20px', color: 'red'}}>エラー: {error}</div>;
@@ -143,30 +150,41 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
           <div key={post.post_id} className="post-item" onClick={() => toggleRepliesView(post.post_id)}>
             <div className="post-avatar"></div>
             <div className="post-body">
-            <div className="post-header">
-              <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{textDecoration: 'none', color: 'inherit'}}>
-                <span className="user-name">{post.user_name}</span>
-              </Link>
-              <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
-            </div>
-              <p className="post-content">{post.content}</p>
+              <div className="post-header">
+                <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{textDecoration: 'none', color: 'inherit'}}>
+                  <span className="user-name">{post.user_name}</span>
+                </Link>
+                <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
+              </div>
+              
+              {/* ★ 3. 投稿本文と画像表示の修正 ★ */}
+              <div className="post-main-content">
+                {post.content && <p className="post-content">{post.content}</p>}
+                {post.image_url && (
+                  <img src={post.image_url} alt="投稿画像" style={{maxWidth: '100%', height: 'auto', borderRadius: '15px', marginTop: '10px'}}/>
+                )}
+              </div>
+
+              {/* ★ 4. アクションボタンをアイコンに変更 ★ */}
               <div className="post-actions">
                 <button onClick={(e) => { e.stopPropagation(); handleReplyButtonClick(post.post_id); }}>
-                  💬 <span>{post.reply_count}</span>
+                  <FaRegComment /> <span>{post.reply_count}</span>
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeletePost(post.post_id); }}
                   title="削除"
                 >
-                  🗑️
+                  <FaTrashAlt />
                 </button>
                 <button
                   className={`like-button ${post.is_liked_by_me ? 'liked' : ''}`}
                   onClick={(e) => { e.stopPropagation(); handleLike(post.post_id, post.is_liked_by_me); }}
                 >
-                  ♡ <span>{post.like_count}</span>
+                  {post.is_liked_by_me ? <FaHeart /> : <FaRegHeart />} <span>{post.like_count}</span>
                 </button>
               </div>
+
+              {/* ... (リプライフォーム、リプライ一覧の表示部分は元のコードのまま) ... */}
               {replyingToPostId === post.post_id && (
                 <form onSubmit={(e) => { e.stopPropagation(); handleReplySubmit(e, post.post_id); }} onClick={e => e.stopPropagation()} style={{ marginTop: '15px' }}>
                   <textarea
