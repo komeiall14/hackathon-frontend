@@ -1,0 +1,78 @@
+/* UserProfile.css */
+.profile-container {
+    width: 100%;
+    max-width: 990px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    background-color: #15202b;
+    border-bottom: 1px solid #38444d;
+}
+
+.header-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: #38444d;
+}
+
+.profile-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 15px;
+    position: relative;
+    margin-top: -70px; /* アイコンをヘッダー画像に重ねる */
+}
+
+.profile-image {
+    width: 135px;
+    height: 135px;
+    border-radius: 50%;
+    border: 4px solid #15202b; /* 背景色と同じ色で縁取り */
+    background-color: #fff;
+}
+
+.edit-profile-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #1da1f2;
+    background-color: transparent;
+    color: #1da1f2;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.edit-profile-btn:hover {
+    background-color: rgba(29, 161, 242, 0.1);
+}
+
+.profile-info {
+    padding: 15px;
+}
+
+.profile-info h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.profile-bio {
+    margin-top: 10px;
+    color: #8899a6;
+}
+
+.profile-posts {
+    margin-top: 10px;
+}
+
+.profile-posts h3 {
+    padding: 15px;
+    border-bottom: 1px solid #38444d;
+}
+
+.loading-message, .error-message {
+    padding: 20px;
+    text-align: center;
+}

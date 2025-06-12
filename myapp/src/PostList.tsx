@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { User as FirebaseUser } from "firebase/auth";
 import { Link } from 'react-router-dom';
-// ★ 1. react-iconsから必要なアイコンをインポートします
 import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart } from 'react-icons/fa';
-import { fireAuth } from './firebase';
 
-// ★ 2. Postの型定義にimage_urlを追加します
+// ★ 変更点1: Postの型定義に firebase_uid を追加
+// これにより、投稿データに必ずFirebase UIDが含まれるようになります。
 export interface Post {
   post_id: string;
-  user_id: string;
+  user_id: string; // これはFirebase UIDです
   user_name: string;
   content: string;
-  image_url: string | null; // 画像URL用のフィールドを追加
+  image_url: string | null;
   created_at: string;
   like_count: number;
   is_liked_by_me: boolean;
@@ -151,13 +150,13 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
             <div className="post-avatar"></div>
             <div className="post-body">
               <div className="post-header">
+                {/* ★ 変更点2: リンク先を post.user_id (Firebase UID) に修正 */}
                 <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{textDecoration: 'none', color: 'inherit'}}>
                   <span className="user-name">{post.user_name}</span>
                 </Link>
                 <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
               </div>
               
-              {/* ★ 3. 投稿本文と画像表示の修正 ★ */}
               <div className="post-main-content">
                 {post.content && <p className="post-content">{post.content}</p>}
                 {post.image_url && (
@@ -165,17 +164,16 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
                 )}
               </div>
 
-              {/* ★ 4. アクションボタンをアイコンに変更 ★ */}
               <div className="post-actions">
                 <button onClick={(e) => { e.stopPropagation(); handleReplyButtonClick(post.post_id); }}>
                   <FaRegComment /> <span>{post.reply_count}</span>
                 </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeletePost(post.post_id); }}
-                  title="削除"
-                >
-                  <FaTrashAlt />
-                </button>
+                {/* ★ 変更点3: 削除ボタンの表示条件も post.user_id を使用 */}
+                {loginUser?.uid === post.user_id && (
+                    <button onClick={(e) => { e.stopPropagation(); handleDeletePost(post.post_id); }} title="削除">
+                        <FaTrashAlt />
+                    </button>
+                )}
                 <button
                   className={`like-button ${post.is_liked_by_me ? 'liked' : ''}`}
                   onClick={(e) => { e.stopPropagation(); handleLike(post.post_id, post.is_liked_by_me); }}
@@ -184,7 +182,6 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
                 </button>
               </div>
 
-              {/* ... (リプライフォーム、リプライ一覧の表示部分は元のコードのまま) ... */}
               {replyingToPostId === post.post_id && (
                 <form onSubmit={(e) => { e.stopPropagation(); handleReplySubmit(e, post.post_id); }} onClick={e => e.stopPropagation()} style={{ marginTop: '15px' }}>
                   <textarea
