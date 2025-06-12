@@ -88,9 +88,9 @@ export const UserProfile: React.FC = () => {
   return (
     <div className="profile-container">
       <div className="profile-header">
-        <img src={userProfile.header_image_url || '/default-header.png'} alt="Header" className="header-image" />
+        <img src={userProfile.header_image_url || '/default-header.png'} alt="" className="header-image" />
         <div className="profile-avatar-container">
-          <img src={userProfile.profile_image_url || '/default-avatar.png'} alt="Profile" className="profile-avatar-image" />
+          <img src={userProfile.profile_image_url || '/default-avatar.png'} alt="" className="profile-avatar-image" />
         </div>
       </div>
       <div className="profile-info">
