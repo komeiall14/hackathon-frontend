@@ -14,7 +14,7 @@ interface User {
   id: string;
   name: string;
   age: number | null; // nullの可能性がある
-  firebase_uid: string | null; // nullの可能性がある
+  firebase_uid: string | null; // nullの可能性がある.
 }
 
 function App() {
