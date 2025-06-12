@@ -1,18 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
 import { fireAuth } from './firebase';
 import toast from 'react-hot-toast';
-import './EditProfileModal.css'; // ★ モーダル用のCSSを追加
+import './EditProfileModal.css';
+import { UserProfileData } from './UserProfile'; 
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
-
-interface UserProfileData {
-  id: string;
-  name: string;
-  bio: string | null;
-  profile_image_url: string | null;
-  header_image_url: string | null;
-}
 
 interface EditProfileModalProps {
   user: UserProfileData;
@@ -21,22 +13,18 @@ interface EditProfileModalProps {
 }
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClose, onUpdate }) => {
-  // フォームの入力値を管理するState
   const [name, setName] = useState(user.name);
   const [bio, setBio] = useState(user.bio || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 画像ファイルとプレビューURLを管理するState
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [headerImageFile, setHeaderImageFile] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(user.profile_image_url);
   const [headerImagePreview, setHeaderImagePreview] = useState<string | null>(user.header_image_url);
 
-  // input(type=file)をプログラムから操作するためのRef
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const headerImageInputRef = useRef<HTMLInputElement>(null);
 
-  // 画像が選択されたときの処理
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, imageType: 'profile' | 'header') => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -51,17 +39,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
     }
   };
 
-  // 画像をバックエンドにアップロードする共通関数
   const uploadImage = useCallback(async (imageFile: File, token: string): Promise<string> => {
     const formData = new FormData();
     formData.append('image', imageFile);
-
     const response = await fetch(`${BACKEND_API_URL}/api/post/image`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
     });
-
     if (!response.ok) {
       throw new Error('画像のアップロードに失敗しました。');
     }
@@ -69,7 +54,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
     return result.imageUrl;
   }, []);
 
-  // 「保存」ボタンが押されたときの処理
   const handleSave = async () => {
     if (!fireAuth.currentUser) {
       toast.error("ログインしていません。");
@@ -81,16 +65,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
       let profileImageUrl = user.profile_image_url || "";
       let headerImageUrl = user.header_image_url || "";
 
-      // 新しいプロフィール画像が選択されていればアップロード
       if (profileImageFile) {
         profileImageUrl = await uploadImage(profileImageFile, token);
       }
-      // 新しいヘッダー画像が選択されていればアップロード
       if (headerImageFile) {
         headerImageUrl = await uploadImage(headerImageFile, token);
       }
 
-      // プロフィール情報をバックエンドに送信
       const response = await fetch(`${BACKEND_API_URL}/api/profile`, {
         method: 'PUT',
         headers: {
@@ -110,14 +91,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
       }
 
       toast.success('プロフィールを更新しました！');
-      onUpdate(); // 親コンポーネントのデータを更新
-      onClose();  // モーダルを閉じる
+      onUpdate();
+      onClose();
     } catch (err: any) {
       toast.error(`エラー: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const CameraIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+        <circle cx="12" cy="13" r="4"></circle>
+    </svg>
+  );
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -130,12 +118,24 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
           <div className="image-upload-section">
             <div className="header-upload">
               <img src={headerImagePreview || '/default-header.png'} alt="Header Preview" />
-              <button onClick={() => headerImageInputRef.current?.click()}>ヘッダー画像を変更</button>
+              <button
+                type="button"
+                onClick={() => headerImageInputRef.current?.click()}
+                title="ヘッダー画像を変更"
+              >
+                <CameraIcon />
+              </button>
               <input type="file" accept="image/*" ref={headerImageInputRef} onChange={(e) => handleImageChange(e, 'header')} style={{ display: 'none' }} />
             </div>
             <div className="profile-image-upload">
-              <img src={profileImagePreview || '/default-avatar.png'} alt="Profile Preview" />
-              <button onClick={() => profileImageInputRef.current?.click()}>プロフィール画像を変更</button>
+              <img src={profileImagePreview || '/default-avatar.png'} alt="" />
+              <button
+                type="button"
+                onClick={() => profileImageInputRef.current?.click()}
+                title="プロフィール画像を変更"
+              >
+                <CameraIcon />
+              </button>
               <input type="file" accept="image/*" ref={profileImageInputRef} onChange={(e) => handleImageChange(e, 'profile')} style={{ display: 'none' }} />
             </div>
           </div>
