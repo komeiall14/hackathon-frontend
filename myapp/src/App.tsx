@@ -7,14 +7,17 @@ import { PostList, Post } from './PostList';
 import { PostForm } from './PostForm';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
-import { Routes, Route } from 'react-router-dom'; // ★ インポート
-import { UserProfile } from './UserProfile';     // ★ インポート
+// ★ 修正点1: useNavigate と SearchResults をインポート
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { UserProfile } from './UserProfile';
+import { SearchResults } from './SearchResults';
+import { FaSearch } from 'react-icons/fa';
 
 interface User {
   id: string;
   name: string;
-  age: number | null; // nullの可能性がある
-  firebase_uid: string | null; // nullの可能性がある.
+  age: number | null;
+  firebase_uid: string | null;
 }
 
 function App() {
@@ -23,8 +26,8 @@ function App() {
   const [users, setUsers] = useState<User[]>([]); 
   const [name, setName] = useState<string>('');
   const [age, setAge] = useState<string>('');
-  const [searchName, setSearchName] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<User[]>([]);
+  // ★ 修正点2: 検索関連のstateを汎用的な名前に変更
+  const [searchQuery, setSearchQuery] = useState<string>(''); 
   const [message, setMessage] = useState<string>('');
   const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null); 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -32,6 +35,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState<boolean>(false);
   
+  // ★ 修正点3: ページ移動のためのnavigate関数を準備
+  const navigate = useNavigate();
+
   const fetchPosts = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -48,20 +54,21 @@ function App() {
       setIsLoading(false);
     }
   }, [BACKEND_API_URL]);
-
+  
+  // useEffectの依存配列からfetchAllUsersを削除し、ログイン成功時にのみ呼び出すように変更
   useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
-
-  useEffect(() => {
-    fetchAllUsers();
     const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
       setLoginUser(user);
+      if (user) {
+        // ログイン状態が確認できたらユーザーリストを更新
+        fetchAllUsers();
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [fetchPosts]); // fetchAllUsersを依存配列から削除
 
-  const fetchAllUsers = async () => {
+  const fetchAllUsers = useCallback(async () => {
     setMessage('Loading users...');
     try {
       const response = await fetch(`${BACKEND_API_URL}/user`);
@@ -75,7 +82,7 @@ function App() {
       console.error('Error fetching all users:', error);
       setMessage(`Error fetching users: ${error instanceof Error ? error.message : String(error)}`);
     }
-  };
+  }, [BACKEND_API_URL]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,26 +122,14 @@ function App() {
     }
   };
 
-  const handleSearchUser = async (e: React.FormEvent) => {
+  // ★ 修正点4: ユーザー名検索の関数を、新しい検索ページへ移動する関数に置き換え
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage('Searching user...');
-    if (!searchName.trim()) {
-      setMessage('Please enter a name to search.');
-      setSearchResults([]);
+    if (!searchQuery.trim()) {
       return;
     }
-    try {
-      const response = await fetch(`${BACKEND_API_URL}/user?name=${encodeURIComponent(searchName.trim())}`);
-      if (!response.ok) {
-        throw new Error(`Failed to search user: ${response.statusText}`);
-      }
-      const data: User[] = await response.json();
-      setSearchResults(data);
-      setMessage(`Found ${data.length} user(s) for "${searchName}".`);
-    } catch (error) {
-      console.error('Error searching user:', error);
-      setMessage(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    // 検索結果ページに、検索クエリを付けて移動する
+    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   return (
@@ -144,16 +139,21 @@ function App() {
         
         <aside className="left-sidebar">
           <h2>ナビゲーション</h2>
-          <LoginForm />
+          
+          <Link to="/" className="nav-link">
+            <FaSearch />
+            <span style={{ marginLeft: '16px' }}>ホーム</span>
+          </Link>
+          
+          <LoginForm onLoginSuccess={fetchAllUsers} />
+          
           <button className="sidebar-button" onClick={() => setShowUserManagement(true)}>
             ユーザー管理
           </button>
         </aside>
       
         <main className="main-content">
-          {/* ★ Routesで囲み、URLのパスに応じて表示するコンポーネントを切り替える */}
           <Routes>
-            {/* ルートパス ("/") の場合 */}
             <Route path="/" element={
               <>
                 <h1>ホーム</h1>
@@ -172,38 +172,29 @@ function App() {
               </>
             } />
             
-            {/* "/users/:userId" の場合 */}
             <Route path="/users/:userId" element={<UserProfile />} />
+            {/* ★ 修正点5: 検索結果ページのルートを追加 */}
+            <Route path="/search" element={<SearchResults />} />
           </Routes>
         </main>
         
         <aside className="right-sidebar">
           <section style={{padding: '10px'}}>
             <h2>ユーザー検索</h2>
-            <form onSubmit={handleSearchUser}>
+            {/* ★ 修正点6: フォームとインプットを新しいstateとハンドラに紐付け */}
+            <form onSubmit={handleSearchSubmit}>
               <div>
                 <input
-                  id="searchName"
+                  id="searchQuery"
                   type="text"
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  placeholder="ユーザー名で検索..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="キーワードで検索..."
                   style={{width: '90%', padding: '8px', borderRadius: '20px', border: '1px solid #38444d', backgroundColor: '#203444', color: 'white'}}
                 />
               </div>
             </form>
-            {searchResults.length > 0 && (
-              <div style={{ marginTop: '20px' }}>
-                <h3>検索結果</h3>
-                <ul style={{ listStyleType: 'none', padding: 0 }}>
-                  {searchResults.map((user) => (
-                    <li key={user.id} style={{ borderBottom: '1px dashed #555', padding: '5px 0', fontSize: '14px' }}>
-                      Name: {user.name}, Age: {user.age}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* 検索結果の表示は、SearchResultsコンポーネントに任せるため削除 */}
           </section>
         </aside>
       </div>

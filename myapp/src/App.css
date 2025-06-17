@@ -158,7 +158,25 @@ h1, h2 {
 }
 
 /* --- ここから追記 --- */
+/* src/App.css */
 
+.nav-link {
+  display: flex;         /* ★ 修正: flexboxレイアウトに変更 */
+  align-items: center;   /* ★ 追加: アイコンとテキストを垂直方向中央に揃える */
+  width: fit-content;    /* ★ 追加: 中身のコンテンツに幅を合わせる */
+  padding: 12px 20px;
+  margin-bottom: 8px;
+  font-size: 20px;
+  font-weight: 700;      /* 700はboldと同じです */
+  color: white;
+  text-decoration: none;
+  border-radius: 9999px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(231, 233, 234, 0.1);
+}
 /* サイドバーボタンのスタイル */
 .sidebar-button {
   display: block;
@@ -254,4 +272,156 @@ h1, h2 {
 .user-list li {
   padding: 5px 0;
   border-bottom: 1px solid #38444d;
+}
+
+/* App.css の末尾などに追加 */
+
+.post-item-wrapper {
+  /* このラッパーは投稿間の線だけを担当します */
+  border-bottom: 1px solid #38444d;
+}
+.post-item-wrapper:hover {
+  background-color: #1a2a3a;
+}
+
+/* 以前の正常な表示に戻すため、post-itemのpaddingを復活させます */
+.post-item {
+  display: flex;
+  padding: 15px; /* ★ このpaddingを戻すのが重要です */
+}
+/* ホバー効果はwrapperに任せるため、こちらでは不要です */
+.post-item:hover {
+  background-color: transparent;
+}
+
+
+.retweet-header {
+  color: #8899a6;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 10px 15px 0 58px; /* アバターの左からの距離に合わせる */
+  display: flex;
+  align-items: center;
+}
+.retweet-header > span {
+  margin-left: 8px;
+}
+
+.original-post-container {
+  border: 1px solid #38444d;
+  border-radius: 16px;
+  padding: 12px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+.original-post-container:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.post-main-content-container, .post-body .post-main-content {
+  cursor: pointer;
+}
+
+.post-item .post-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  margin-top: 12px;
+}
+
+/* App.css の末尾に追加 */
+
+/* メニュー外をクリックしたときに閉じるための透明なオーバーレイ */
+.menu-overlay-transparent {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  z-index: 1050; /* メニューよりは下、他の要素よりは上 */
+}
+
+/* リツイートメニューのコンテナ */
+.retweet-menu {
+  position: absolute;
+  bottom: 100%; /* ボタンの上に表示 */
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px; /* ボタンとの間に少し余白 */
+  background-color: #15202B;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  z-index: 1100; /* 最前面に表示 */
+  width: 200px;
+  overflow: hidden;
+  border: 1px solid #38444d;
+}
+
+/* メニューの各項目 */
+.retweet-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.retweet-menu-item:hover {
+  background-color: rgba(231, 233, 234, 0.1);
+}
+
+.retweet-menu-item svg {
+  margin-right: 8px;
+}
+
+/* App.css の末尾に追加 */
+
+.post-item-wrapper {
+  border-bottom: 1px solid #38444d;
+}
+.post-item-wrapper:hover {
+  background-color: #1a2a3a;
+}
+.post-avatar img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.post-item .post-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  margin-top: 12px;
+}
+
+/* リツイートヘッダーのスタイル */
+.retweet-header {
+  color: #8899a6;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 10px 15px 0 58px; /* アバターの左からの距離に合わせる */
+  display: flex;
+  align-items: center;
+}
+.retweet-header span {
+  margin-left: 8px;
+}
+
+/* 引用元投稿のコンテナスタイル */
+.original-post-container {
+  border: 1px solid #38444d;
+  border-radius: 16px;
+  padding: 12px;
+  margin-top: 8px;
+}
+.original-post-container:hover {
+  background-color: rgba(255, 255, 255, 0.03);
 }
