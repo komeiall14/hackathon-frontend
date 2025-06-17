@@ -7,11 +7,11 @@ import { PostList, Post } from './PostList';
 import { PostForm } from './PostForm';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
-// ★ 修正点1: useNavigate と SearchResults をインポート
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
-import { FaSearch } from 'react-icons/fa';
+import { FaHome, FaUser } from 'react-icons/fa'; // ★ アイコンを変更・追加
+import { PostDetailPage } from './PostDetailPage'; 
 
 interface User {
   id: string;
@@ -26,7 +26,6 @@ function App() {
   const [users, setUsers] = useState<User[]>([]); 
   const [name, setName] = useState<string>('');
   const [age, setAge] = useState<string>('');
-  // ★ 修正点2: 検索関連のstateを汎用的な名前に変更
   const [searchQuery, setSearchQuery] = useState<string>(''); 
   const [message, setMessage] = useState<string>('');
   const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null); 
@@ -34,14 +33,28 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState<boolean>(false);
-  
-  // ★ 修正点3: ページ移動のためのnavigate関数を準備
   const navigate = useNavigate();
 
-  const fetchPosts = useCallback(async () => {
+  // ★ 変更点1: fetchPostsが引数(currentUser)を取り、認証情報をヘッダーに含めるように修正
+  const fetchPosts = useCallback(async (currentUser: FirebaseUser | null) => {
     setIsLoading(true);
+    
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (currentUser) {
+      try {
+        const token = await currentUser.getIdToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      } catch (error) {
+        console.error("IDトークンの取得に失敗:", error);
+      }
+    }
+
     try {
-      const response = await fetch(`${BACKEND_API_URL}/posts`);
+      const response = await fetch(`${BACKEND_API_URL}/posts`, { headers });
+
       if (!response.ok) {
         throw new Error('データの取得に失敗しました。');
       }
@@ -55,19 +68,6 @@ function App() {
     }
   }, [BACKEND_API_URL]);
   
-  // useEffectの依存配列からfetchAllUsersを削除し、ログイン成功時にのみ呼び出すように変更
-  useEffect(() => {
-    fetchPosts();
-    const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
-      setLoginUser(user);
-      if (user) {
-        // ログイン状態が確認できたらユーザーリストを更新
-        fetchAllUsers();
-      }
-    });
-    return () => unsubscribe();
-  }, [fetchPosts]); // fetchAllUsersを依存配列から削除
-
   const fetchAllUsers = useCallback(async () => {
     setMessage('Loading users...');
     try {
@@ -83,6 +83,18 @@ function App() {
       setMessage(`Error fetching users: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, [BACKEND_API_URL]);
+
+  // ★ 変更点2: ログイン状態が変化した際に、そのユーザー情報(user)をfetchPostsに渡すように修正
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
+      setLoginUser(user);
+      fetchPosts(user); // ログイン状態を元に投稿を取得
+      if (user) {
+        fetchAllUsers();
+      }
+    });
+    return () => unsubscribe();
+  }, [fetchPosts, fetchAllUsers]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,13 +134,11 @@ function App() {
     }
   };
 
-  // ★ 修正点4: ユーザー名検索の関数を、新しい検索ページへ移動する関数に置き換え
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
       return;
     }
-    // 検索結果ページに、検索クエリを付けて移動する
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
@@ -141,11 +151,24 @@ function App() {
           <h2>ナビゲーション</h2>
           
           <Link to="/" className="nav-link">
-            <FaSearch />
+            <FaHome /> {/* アイコンをホームに変更 */}
             <span style={{ marginLeft: '16px' }}>ホーム</span>
           </Link>
+
+          {/* ★ 変更点3: ログイン時のみプロフィールへのリンクを表示 */}
+          {loginUser && (
+            <Link to={`/users/${loginUser.uid}`} className="nav-link">
+              <FaUser />
+              <span style={{ marginLeft: '16px' }}>プロフィール</span>
+            </Link>
+          )}
           
-          <LoginForm onLoginSuccess={fetchAllUsers} />
+          <LoginForm onLoginSuccess={() => {
+              fetchAllUsers();
+              // ★ 変更点4: ログイン成功後も、現在のログインユーザー情報で投稿を再取得
+              fetchPosts(fireAuth.currentUser); 
+            }} 
+          />
           
           <button className="sidebar-button" onClick={() => setShowUserManagement(true)}>
             ユーザー管理
@@ -159,29 +182,31 @@ function App() {
                 <h1>ホーム</h1>
                 {loginUser && (
                   <section className="post-form-section">
-                    <PostForm loginUser={loginUser} onPostSuccess={fetchPosts} />
+                    {/* ★ 変更点5: onPostSuccessで現在のログインユーザーを渡す */}
+                    <PostForm loginUser={loginUser} onPostSuccess={() => fetchPosts(loginUser)} />
                   </section>
                 )}
                 <PostList 
                   posts={posts} 
                   isLoading={isLoading} 
                   error={error} 
-                  onUpdate={fetchPosts}
+                  // ★ 変更点6: onUpdateで現在のログインユーザーを渡す
+                  onUpdate={() => fetchPosts(loginUser)}
                   loginUser={loginUser} 
+                  title="投稿一覧" 
                 />
               </>
             } />
             
             <Route path="/users/:userId" element={<UserProfile />} />
-            {/* ★ 修正点5: 検索結果ページのルートを追加 */}
             <Route path="/search" element={<SearchResults />} />
+            <Route path="/status/:postId" element={<PostDetailPage />} />
           </Routes>
         </main>
         
         <aside className="right-sidebar">
           <section style={{padding: '10px'}}>
             <h2>ユーザー検索</h2>
-            {/* ★ 修正点6: フォームとインプットを新しいstateとハンドラに紐付け */}
             <form onSubmit={handleSearchSubmit}>
               <div>
                 <input
@@ -194,7 +219,6 @@ function App() {
                 />
               </div>
             </form>
-            {/* 検索結果の表示は、SearchResultsコンポーネントに任せるため削除 */}
           </section>
         </aside>
       </div>

@@ -1,19 +1,27 @@
 import React from 'react';
-import { Post } from './PostList'; // Postの型をインポート
-import { Link } from 'react-router-dom';
+import { Post } from './PostList';
+import { Link, useNavigate } from 'react-router-dom'; // ★ useNavigate をインポート
 
-// このコンポーネントが受け取るPropsの型を定義
 interface OriginalPostProps {
-  post: Post; // 表示する元の投稿データ
+  post: Post;
 }
 
 export const OriginalPost: React.FC<OriginalPostProps> = ({ post }) => {
+  const navigate = useNavigate(); // ★ useNavigateフックを呼び出す
+
+  const handleNavigate = (e: React.MouseEvent) => {
+    // ★ クリックイベントが親要素に伝わるのを防ぐ
+    e.stopPropagation(); 
+    // ★ 引用元の投稿の詳細ページへ遷移
+    navigate(`/status/${post.post_id}`); 
+  };
+  
   return (
-    // 枠で囲まれたコンテナ
-    <div className="original-post-container">
-      {/* 投稿者の情報（アバター、名前、投稿時間） */}
+    // ▼▼▼ このdivにonClickイベントを追加 ▼▼▼
+    <div className="original-post-container" onClick={handleNavigate}>
       <div className="post-header">
-        <Link to={`/users/${post.user_id}`} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+        {/* ユーザーページへのリンクは、クリックしても詳細ページへ遷移しないようにする */}
+        <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
           <img 
             src={post.user_profile_image_url || '/default-avatar.png'} 
             alt={`${post.user_name}のアバター`} 
@@ -23,6 +31,7 @@ export const OriginalPost: React.FC<OriginalPostProps> = ({ post }) => {
           <span className="timestamp" style={{fontSize: '15px'}}> - {new Date(post.created_at).toLocaleString()}</span>
         </Link>
       </div>
+      
       {/* 投稿の本文と画像 */}
       {post.content && <p className="post-content" style={{fontSize: '15px', marginTop: '5px'}}>{post.content}</p>}
       {post.image_url && (

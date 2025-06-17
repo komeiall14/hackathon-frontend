@@ -1,47 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // useEffect をインポート
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
-import { Link } from 'react-router-dom';
 import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom'; 
 import { QuoteRetweetModal } from './QuoteRetweetModal';
-import { OriginalPost } from './OriginalPost'; // 作成したコンポーネントをインポート
+import { OriginalPost } from './OriginalPost';
 
-// ★ 修正点1: バックエンドから渡されるプロフィール画像URLの受け皿を追加
 export interface Post {
   post_id: string;
   user_id: string;
   user_name: string;
-  user_profile_image_url: string | null; // 追加
+  user_profile_image_url: string | null;
   content: string;
   image_url: string | null;
   created_at: string;
   like_count: number;
   is_liked_by_me: boolean;
   reply_count: number;
-  original_post?: Post; // ★ この行を追加
+  original_post?: Post;
 }
 
 interface PostListProps {
   posts: Post[];
   isLoading: boolean;
   error: string | null;
-  onUpdate: () => void;
+  onUpdate: () => void; // onUpdateは他の機能(投稿、削除など)で依然として必要です
   loginUser: FirebaseUser | null;
+  title?: string; // ★★★ 1. titleプロパティを追加（オプショナル）
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser }) => {
+export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser, title }) => { // ★★★ 2. titleをpropsから受け取る
+  const navigate = useNavigate();
+  // ★ 変更点1: 内部で状態を管理するためのstateを追加
+  const [internalPosts, setInternalPosts] = useState<Post[]>(posts);
   const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState<string>('');
   const [visibleReplies, setVisibleReplies] = useState<Record<string, Post[]>>({});
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [quotingPost, setQuotingPost] = useState<Post | null>(null);
-  const [showRetweetMenu, setShowRetweetMenu] = useState<string | null>(null); // 開いているメニューの投稿IDを管理
+  const [showRetweetMenu, setShowRetweetMenu] = useState<string | null>(null);
 
+  // ★ 変更点2: 親コンポーネントから渡されるpostsが更新されたら、内部のstateも同期させる
+  useEffect(() => {
+    setInternalPosts(posts);
+  }, [posts]);
 
+  
+
+  // ★ 変更点3: handleLike関数を「Optimistic Update」方式に書き換える
   const handleLike = async (postId: string, isLiked: boolean) => {
-    if (!loginUser) { toast.error('ログインしてください。'); return; }
+    if (!loginUser) {
+      toast.error('ログインしてください。');
+      return;
+    }
+
+    const originalPosts = [...internalPosts]; // エラー時に元に戻すために、現在の投稿リストをコピーして保存
+
+    // 1. 先にUIを更新してしまう（楽観的更新）
+    const updatedPosts = internalPosts.map(p => {
+      if (p.post_id === postId) {
+        // いいねの状態と数を反転させる
+        return {
+          ...p,
+          is_liked_by_me: !isLiked,
+          like_count: isLiked ? p.like_count - 1 : p.like_count + 1,
+        };
+      }
+      return p;
+    });
+    setInternalPosts(updatedPosts); // UIに即時反映
+
+    // 2. 裏でバックエンドにリクエストを送信
     const token = await loginUser.getIdToken();
     const method = isLiked ? 'DELETE' : 'POST';
     try {
@@ -49,9 +80,18 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
         method: method,
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (!response.ok) { throw new Error('いいねの操作に失敗しました。'); }
-      onUpdate();
-    } catch (err: any) { toast.error(err.message); }
+
+      if (!response.ok) {
+        // 3a. もしAPIリクエストが失敗したら、UIを元の状態に戻す
+        throw new Error('いいねの操作に失敗しました。');
+      }
+      // 成功した場合は何もしない（UIは既に更新済みのため）
+
+    } catch (err: any) {
+      toast.error(err.message);
+      // 3b. エラーが起きたら、UIを元の状態に戻す
+      setInternalPosts(originalPosts);
+    }
   };
   
   const handleReplyButtonClick = (postId: string) => {
@@ -80,30 +120,11 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
       if (!response.ok) { throw new Error('リプライの投稿に失敗しました。'); }
       setReplyingToPostId(null);
       setReplyContent('');
-      onUpdate();
+      onUpdate(); // 新しいリプライを反映するために全体を更新
       toast.success('リプライを投稿しました！'); 
     } catch (err: any) { toast.error(err.message); }
   };
 
-
-  const toggleRepliesView = async (postId: string) => {
-    if (visibleReplies[postId]) {
-      const newVisibleReplies = { ...visibleReplies };
-      delete newVisibleReplies[postId];
-      setVisibleReplies(newVisibleReplies);
-      return;
-    }
-    try {
-      const response = await fetch(`${BACKEND_API_URL}/api/posts/replies/${postId}`);
-      if (!response.ok) {
-        throw new Error('リプライの取得に失敗しました。');
-      }
-      const replies: Post[] = await response.json();
-      setVisibleReplies(prev => ({ ...prev, [postId]: replies }));
-    } catch (err: any) {
-      toast.error(err.message); 
-    }
-  };
 
   const handleGenerateReply = async (originalPostContent: string) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
@@ -155,7 +176,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
         });
         if (!response.ok) throw new Error('リツイートに失敗しました。');
         toast.success('リツイートしました！');
-        onUpdate(); // タイムラインを更新
+        onUpdate();
     } catch (err: any) {
         toast.error(err.message);
     }
@@ -164,13 +185,16 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   if (isLoading) return <div style={{padding: '20px'}}>投稿を読み込んでいます...</div>;
   if (error) return <div style={{padding: '20px', color: 'red'}}>エラー: {error}</div>;
 
-return (
+  return (
     <section className="post-list-section">
-      <h2>投稿一覧</h2>
+      {/* postsの件数が0より大きい場合のみ「投稿一覧」ヘッダーを表示 */}
+      {title && <h2>{title}</h2>}
       <div>
-        {posts.map((post) => (
-          <div key={post.post_id} className="post-item-wrapper">
-            {/* --- リツイートの場合のヘッダー --- */}
+        {internalPosts.map((post) => (
+          // ★ 投稿全体をクリックすると詳細ページに遷移するラッパー
+          <div key={post.post_id} className="post-item-wrapper" onClick={() => navigate(`/status/${post.post_id}`)}>
+            
+            {/* 通常のリツイートの場合に「〇〇さんがリツイートしました」ヘッダーを表示 */}
             {post.original_post && !post.content && (
               <div className="retweet-header">
                 <FaRetweet />
@@ -195,12 +219,12 @@ return (
                   <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
                 </div>
                 
-                {/* --- 引用リツイートの場合のコメント表示 --- */}
+                {/* 引用リツイートの場合、自分のコメントを表示 */}
                 {post.original_post && post.content && (
                   <p className="post-content">{post.content}</p>
                 )}
                 
-                {/* --- 通常投稿の場合の表示 --- */}
+                {/* 通常投稿の場合、本文と画像を表示 */}
                 {!post.original_post && (
                   <>
                     {post.content && <p className="post-content">{post.content}</p>}
@@ -210,7 +234,7 @@ return (
                   </>
                 )}
 
-                {/* --- リツイート/引用リツイートの場合、引用元をOriginalPostコンポーネントで表示 --- */}
+                {/* リツイートまたは引用リツイートの場合、引用元の投稿を表示 */}
                 {post.original_post && (
                   <OriginalPost post={post.original_post} />
                 )}
@@ -219,6 +243,7 @@ return (
                   <button onClick={(e) => { e.stopPropagation(); handleReplyButtonClick(post.post_id); }}>
                     <FaRegComment /> <span>{post.reply_count}</span>
                   </button>
+
                   {loginUser?.uid === post.user_id && (
                       <button onClick={(e) => { e.stopPropagation(); handleDeletePost(post.post_id); }} title="削除">
                           <FaTrashAlt />
@@ -235,27 +260,15 @@ return (
                     >
                       <FaRetweet />
                     </button>
-                    
                     {showRetweetMenu === post.post_id && (
                       <>
-                        <div className="menu-overlay-transparent" onClick={(e) => {
-                          e.stopPropagation();
-                          setShowRetweetMenu(null);
-                        }}></div>
+                        <div className="menu-overlay-transparent" onClick={(e) => {e.stopPropagation(); setShowRetweetMenu(null);}}></div>
                         <div className="retweet-menu">
-                          <button className="retweet-menu-item" onClick={(e) => {
-                            e.stopPropagation();
-                            handleRetweet(post.post_id);
-                            setShowRetweetMenu(null);
-                          }}>
+                          <button className="retweet-menu-item" onClick={(e) => {e.stopPropagation(); handleRetweet(post.post_id); setShowRetweetMenu(null);}}>
                             <FaRetweet />
                             <span style={{ marginLeft: '8px' }}>リツイート</span>
                           </button>
-                          <button className="retweet-menu-item" onClick={(e) => {
-                            e.stopPropagation();
-                            setQuotingPost(post);
-                            setShowRetweetMenu(null);
-                          }}>
+                          <button className="retweet-menu-item" onClick={(e) => {e.stopPropagation(); setQuotingPost(post); setShowRetweetMenu(null);}}>
                             <FaQuoteLeft />
                             <span style={{ marginLeft: '8px' }}>引用リツイート</span>
                           </button>
@@ -272,6 +285,7 @@ return (
                   </button>
                 </div>
 
+                {/* インラインのリプライフォーム */}
                 {replyingToPostId === post.post_id && (
                   <form onSubmit={(e) => { e.stopPropagation(); handleReplySubmit(e, post.post_id); }} onClick={e => e.stopPropagation()} style={{ marginTop: '15px' }}>
                     <textarea
@@ -281,46 +295,23 @@ return (
                       style={{ width: '95%', height: '60px', padding: '8px', display: 'block', backgroundColor: '#203444', color: 'white', border: '1px solid #38444d' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
-                      <button type="button" onClick={() => handleGenerateReply(post.content || '')} disabled={isGenerating}>
+                      <button type="button" onClick={(e) => {e.stopPropagation(); handleGenerateReply(post.content)}} disabled={isGenerating}>
                         {isGenerating ? '生成中...' : '🤖 AIで返信を生成'}
                       </button>
                       <div>
-                        <button type="button" onClick={() => setReplyingToPostId(null)} style={{ marginRight: '10px' }}>キャンセル</button>
+                        <button type="button" onClick={(e) => {e.stopPropagation(); setReplyingToPostId(null)}} style={{ marginRight: '10px' }}>キャンセル</button>
                         <button type="submit">返信する</button>
                       </div>
                     </div>
                   </form>
-                )}
-                {visibleReplies[post.post_id] && (
-                  <div className="replies-section" style={{ marginTop: '10px' }}>
-                    {visibleReplies[post.post_id].map(reply => (
-                      <div key={reply.post_id} className="post-item" style={{paddingLeft: 0, borderTop: '1px solid #38444d'}}>
-                        <div className="post-avatar">
-                          <Link to={`/users/${reply.user_id}`} onClick={e => e.stopPropagation()}>
-                            <img 
-                              src={reply.user_profile_image_url || '/default-avatar.png'} 
-                              alt={`${reply.user_name}のアバター`} 
-                            />
-                          </Link>
-                        </div>
-                        <div className="post-body">
-                          <div className="post-header">
-                              <Link to={`/users/${reply.user_id}`} onClick={e => e.stopPropagation()} style={{textDecoration: 'none', color: 'inherit'}}>
-                                  <span className="user-name">{reply.user_name}</span>
-                              </Link>
-                            <span className="timestamp"> - {new Date(reply.created_at).toLocaleString()}</span>
-                          </div>
-                          <p className="post-content">{reply.content}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 )}
               </div>
             </div>
           </div>
         ))}
       </div>
+      
+      {/* 引用リツイート用モーダル */}
       {quotingPost && loginUser && (
         <QuoteRetweetModal 
           post={quotingPost}
