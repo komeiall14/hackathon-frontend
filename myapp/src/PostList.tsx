@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; // useEffect をインポート
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
-import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft } from 'react-icons/fa';
+import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, FaEye } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom'; 
 import { QuoteRetweetModal } from './QuoteRetweetModal';
 import { OriginalPost } from './OriginalPost';
@@ -11,12 +11,14 @@ export interface Post {
   user_id: string;
   user_name: string;
   user_profile_image_url: string | null;
-  content: string;
+  content: string | null;
   image_url: string | null;
   created_at: string;
   like_count: number;
   is_liked_by_me: boolean;
   reply_count: number;
+  retweet_count: number;         // ★ この行を追加
+  is_retweeted_by_me: boolean;  // ★ この行を追加
   original_post?: Post;
 }
 
@@ -27,70 +29,52 @@ interface PostListProps {
   onUpdate: () => void; // onUpdateは他の機能(投稿、削除など)で依然として必要です
   loginUser: FirebaseUser | null;
   title?: string; // ★★★ 1. titleプロパティを追加（オプショナル）
+  onPostCreated?: (newPost: Post) => void; 
+  onUpdateSinglePost: (updatedPost: Post) => void; // ★★★ 新しいプロパティ
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser, title }) => { // ★★★ 2. titleをpropsから受け取る
+export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser, title, onPostCreated, onUpdateSinglePost }) => {
+  // ... 以降のコードは変更なし
   const navigate = useNavigate();
   // ★ 変更点1: 内部で状態を管理するためのstateを追加
-  const [internalPosts, setInternalPosts] = useState<Post[]>(posts);
+
   const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState<string>('');
   const [visibleReplies, setVisibleReplies] = useState<Record<string, Post[]>>({});
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [quotingPost, setQuotingPost] = useState<Post | null>(null);
   const [showRetweetMenu, setShowRetweetMenu] = useState<string | null>(null);
-
-  // ★ 変更点2: 親コンポーネントから渡されるpostsが更新されたら、内部のstateも同期させる
-  useEffect(() => {
-    setInternalPosts(posts);
-  }, [posts]);
-
   
 
   // ★ 変更点3: handleLike関数を「Optimistic Update」方式に書き換える
-  const handleLike = async (postId: string, isLiked: boolean) => {
-    if (!loginUser) {
-      toast.error('ログインしてください。');
-      return;
-    }
-
-    const originalPosts = [...internalPosts]; // エラー時に元に戻すために、現在の投稿リストをコピーして保存
-
-    // 1. 先にUIを更新してしまう（楽観的更新）
-    const updatedPosts = internalPosts.map(p => {
-      if (p.post_id === postId) {
-        // いいねの状態と数を反転させる
-        return {
-          ...p,
-          is_liked_by_me: !isLiked,
-          like_count: isLiked ? p.like_count - 1 : p.like_count + 1,
-        };
-      }
-      return p;
-    });
-    setInternalPosts(updatedPosts); // UIに即時反映
-
-    // 2. 裏でバックエンドにリクエストを送信
+  const handleLike = async (postToUpdate: Post) => {
+    if (!loginUser) { toast.error('ログインしてください。'); return; }
+  
+    const isLiked = postToUpdate.is_liked_by_me;
+  
+    // 1. UIを楽観的に更新するために、親コンポーネントの関数を呼び出す
+    const optimisticallyUpdatedPost = {
+      ...postToUpdate,
+      is_liked_by_me: !isLiked,
+      like_count: isLiked ? postToUpdate.like_count - 1 : postToUpdate.like_count + 1,
+    };
+    onUpdateSinglePost(optimisticallyUpdatedPost);
+  
+    // 2. バックエンドにリクエスト
     const token = await loginUser.getIdToken();
     const method = isLiked ? 'DELETE' : 'POST';
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/posts/like/${postId}`, {
+      const response = await fetch(`${BACKEND_API_URL}/api/posts/like/${postToUpdate.post_id}`, {
         method: method,
         headers: { 'Authorization': `Bearer ${token}` },
       });
-
-      if (!response.ok) {
-        // 3a. もしAPIリクエストが失敗したら、UIを元の状態に戻す
-        throw new Error('いいねの操作に失敗しました。');
-      }
-      // 成功した場合は何もしない（UIは既に更新済みのため）
-
+      if (!response.ok) { throw new Error('いいねの操作に失敗しました。'); }
     } catch (err: any) {
       toast.error(err.message);
-      // 3b. エラーが起きたら、UIを元の状態に戻す
-      setInternalPosts(originalPosts);
+      // エラー時はUIを元の状態に戻す
+      onUpdateSinglePost(postToUpdate);
     }
   };
   
@@ -126,8 +110,16 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   };
 
 
-  const handleGenerateReply = async (originalPostContent: string) => {
+  const handleGenerateReply = async (originalPostContent: string | null) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
+    
+    // ▼▼▼ contentがnullまたは空文字列の場合のチェックを追加 ▼▼▼
+    if (!originalPostContent) {
+      toast.error("元の投稿に内容がないため、返信を生成できません。");
+      return;
+    }
+    // ▲▲▲ ここまで追加 ▲▲▲
+
     const token = await loginUser.getIdToken();
     setIsGenerating(true);
     try {
@@ -144,7 +136,6 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
         if (data.suggestion) { setReplyContent(String(data.suggestion)); }
     } catch (err: any) { toast.error(err.message); } finally { setIsGenerating(false); }
   };
-
   const handleDeletePost = async (postId: string) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
     if (!window.confirm("この投稿を本当に削除しますか？")) { return; }
@@ -164,25 +155,29 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
     } catch (err: any) { toast.error(`エラー: ${err.message}`); }
   };
 
-  const handleRetweet = async (postId: string) => {
-    if (!loginUser) { toast.error('ログインしてください。'); return; }
-    if (!window.confirm("この投稿をリツイートしますか？")) return;
+// PostList.tsx
 
+// PostList.tsx
+
+const handleRetweet = async (post: Post) => {
+  if (!loginUser) { toast.error('ログインしてください。'); return; }
+  const method = post.is_retweeted_by_me ? 'DELETE' : 'POST';
+  try {
     const token = await loginUser.getIdToken();
-    try {
-        const response = await fetch(`${BACKEND_API_URL}/api/retweet/${postId}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (!response.ok) throw new Error('リツイートに失敗しました。');
-        toast.success('リツイートしました！');
-        onUpdate();
-    } catch (err: any) {
-        toast.error(err.message);
-    }
-  };
+    const response = await fetch(`${BACKEND_API_URL}/api/retweet/${post.post_id}`, {
+      method, headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) { throw new Error('リツイート操作に失敗しました。'); }
+    onUpdate(); // 成功したらリスト全体を更新
+    toast.success(post.is_retweeted_by_me ? 'リツイートを取り消しました。' : 'リツイートしました！');
+  } catch (err: any) {
+    toast.error(err.message);
+    // この操作はUIへの影響が大きいため、エラー時は全体更新で元の状態に戻すのが安全
+    onUpdate();
+  }
+};
 
-  if (isLoading) return <div style={{padding: '20px'}}>投稿を読み込んでいます...</div>;
+if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投稿を読み込んでいます...</div>;
   if (error) return <div style={{padding: '20px', color: 'red'}}>エラー: {error}</div>;
 
   return (
@@ -190,7 +185,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
       {/* postsの件数が0より大きい場合のみ「投稿一覧」ヘッダーを表示 */}
       {title && <h2>{title}</h2>}
       <div>
-        {internalPosts.map((post) => (
+        {posts.map((post) => ( // internalPosts → posts に変更
           // ★ 投稿全体をクリックすると詳細ページに遷移するラッパー
           <div key={post.post_id} className="post-item-wrapper" onClick={() => navigate(`/status/${post.post_id}`)}>
             
@@ -252,6 +247,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
                   
                   <div style={{ position: 'relative' }}>
                     <button 
+                      className={`retweet-button ${post.is_retweeted_by_me ? 'retweeted' : ''}`}
                       onClick={(e) => { 
                         e.stopPropagation();
                         setShowRetweetMenu(showRetweetMenu === post.post_id ? null : post.post_id);
@@ -259,27 +255,42 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
                       title="リツイート"
                     >
                       <FaRetweet />
+                      <span>{post.retweet_count > 0 ? post.retweet_count : ''}</span>
                     </button>
+                    
                     {showRetweetMenu === post.post_id && (
                       <>
                         <div className="menu-overlay-transparent" onClick={(e) => {e.stopPropagation(); setShowRetweetMenu(null);}}></div>
                         <div className="retweet-menu">
-                          <button className="retweet-menu-item" onClick={(e) => {e.stopPropagation(); handleRetweet(post.post_id); setShowRetweetMenu(null);}}>
+                          <button className="retweet-menu-item" onClick={(e) => {e.stopPropagation(); handleRetweet(post); setShowRetweetMenu(null);}}>
                             <FaRetweet />
-                            <span style={{ marginLeft: '8px' }}>リツイート</span>
+                            <span style={{ marginLeft: '8px' }}>
+                              {post.is_retweeted_by_me ? 'リツイートを取り消す' : 'リツイート'}
+                            </span>
                           </button>
                           <button className="retweet-menu-item" onClick={(e) => {e.stopPropagation(); setQuotingPost(post); setShowRetweetMenu(null);}}>
                             <FaQuoteLeft />
                             <span style={{ marginLeft: '8px' }}>引用リツイート</span>
                           </button>
+                          {/* 「引用リツイートを見る」機能は、今後の実装のためにコメントアウトしておきます */}
+                          <button 
+                            className="retweet-menu-item" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/status/${post.post_id}/quotes`);
+                              setShowRetweetMenu(null);
+                            }}
+                          >
+                            <FaEye />
+                            <span style={{ marginLeft: '8px' }}>引用リツイートを見る</span>
+                          </button>
                         </div>
                       </>
                     )}
                   </div>
-
                   <button
                     className={`like-button ${post.is_liked_by_me ? 'liked' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); handleLike(post.post_id, post.is_liked_by_me); }}
+                    onClick={(e) => { e.stopPropagation(); handleLike(post); }} 
                   >
                     {post.is_liked_by_me ? <FaHeart /> : <FaRegHeart />} <span>{post.like_count}</span>
                   </button>
@@ -295,6 +306,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
                       style={{ width: '95%', height: '60px', padding: '8px', display: 'block', backgroundColor: '#203444', color: 'white', border: '1px solid #38444d' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
+                      {/* ▼▼▼ このbuttonのonClickを修正 ▼▼▼ */}
                       <button type="button" onClick={(e) => {e.stopPropagation(); handleGenerateReply(post.content)}} disabled={isGenerating}>
                         {isGenerating ? '生成中...' : '🤖 AIで返信を生成'}
                       </button>
@@ -317,7 +329,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
           post={quotingPost}
           loginUser={loginUser}
           onClose={() => setQuotingPost(null)}
-          onUpdate={() => {
+          onQuoteSuccess={(newQuotePost) => {
             onUpdate();
             setQuotingPost(null);
           }}

@@ -2,22 +2,23 @@ import React, { useState } from 'react';
 import { Post } from './PostList';
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
-import './QuoteRetweetModal.css'; // ★ 新しく作成するCSSファイルをインポート
+import './QuoteRetweetModal.css';
 
-// このモーダルが受け取るPropsの型を定義
+// ▼▼▼ この interface を修正 ▼▼▼
 interface QuoteRetweetModalProps {
-  post: Post; // 引用する元の投稿
+  post: Post;
   loginUser: FirebaseUser | null;
   onClose: () => void;
-  onUpdate: () => void;
+  onQuoteSuccess: (newQuotePost: Post) => void; // ★ onUpdateの代わりの新しいprops
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, loginUser, onClose, onUpdate }) => {
-  const [comment, setComment] = useState(''); // 引用コメント用のstate
+export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, loginUser, onClose, onQuoteSuccess }) => {
+  const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ▼▼▼ この handleSubmit 関数を修正 ▼▼▼
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
@@ -32,7 +33,6 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
     
     try {
       const token = await loginUser.getIdToken();
-      // 引用リツイートとして、既存の投稿作成エンドポイントにリクエストを送信
       const response = await fetch(`${BACKEND_API_URL}/post`, {
         method: 'POST',
         headers: {
@@ -41,7 +41,7 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
         },
         body: JSON.stringify({
           content: comment,
-          original_post_id: post.post_id, // ★ 引用元の投稿IDを渡すのが重要
+          original_post_id: post.post_id,
         }),
       });
 
@@ -49,9 +49,12 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
         throw new Error('引用リツイートに失敗しました。');
       }
 
+      const newQuotePost: Post = await response.json(); // ★ 新しい投稿データを取得
+
       toast.success('引用リツイートしました！');
-      onUpdate(); // タイムラインを更新
-      onClose(); // モーダルを閉じる
+      onQuoteSuccess(newQuotePost); // ★ 新しいコールバックを呼ぶ
+      onClose();
+
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -80,7 +83,6 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
                 />
             </div>
 
-            {/* 引用元の投稿を枠で囲んで表示 */}
             <div className="original-post-container-qt">
               <div className="original-post-header-qt">
                 <img src={post.user_profile_image_url || '/default-avatar.png'} alt="original author avatar" />

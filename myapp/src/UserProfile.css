@@ -91,3 +91,33 @@
     padding: 20px;
     text-align: center;
 }
+
+/* UserProfile.css に追記 */
+
+.follow-btn, .following-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.follow-btn {
+    background-color: white;
+    color: #15202b;
+    border: 1px solid white;
+}
+.follow-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.following-btn {
+    background-color: transparent;
+    color: white;
+    border: 1px solid #536471;
+}
+.following-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #f4212e;
+    border-color: rgba(239, 68, 68, 0.5);
+}

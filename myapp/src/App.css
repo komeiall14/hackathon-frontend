@@ -425,3 +425,33 @@ h1, h2 {
 .original-post-container:hover {
   background-color: rgba(255, 255, 255, 0.03);
 }
+
+/* App.css の末尾に追記 */
+
+/* リツイートボタンの基本スタイル */
+.post-actions .retweet-button {
+  transition: color 0.2s;
+}
+
+/* ホバー時の色 */
+.post-actions .retweet-button:hover {
+  color: #17bf63; /* 緑色 */
+}
+
+/* 既にリツイート済みの時の色（緑色を維持） */
+.post-actions .retweet-button.retweeted {
+  color: #17bf63; /* 緑色 */
+}
+
+/* App.css の末尾などに追加 */
+
+.profile-stat-link {
+  text-decoration: none; /* テキストの下線をなくす */
+  color: inherit;      /* 親要素の文字色（白やグレー）を継承する */
+  transition: opacity 0.2s;
+}
+
+.profile-stat-link:hover {
+  opacity: 0.8; /* ホバー時に少し薄くしてクリック可能であることを示す */
+  text-decoration: underline; /* ホバー時は下線を表示してリンクであることを分かりやすくする */
+}

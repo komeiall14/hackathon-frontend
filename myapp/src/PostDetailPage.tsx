@@ -16,6 +16,9 @@ export const PostDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // ログイン状態を監視
   useEffect(() => {
@@ -66,6 +69,18 @@ export const PostDetailPage: React.FC = () => {
     fetchData(loginUser);
   }, [loginUser, fetchData]);
 
+  const handleUpdateSinglePostInDetail = (updatedPost: Post) => {
+    // メイン投稿が更新された場合
+    if (post && post.post_id === updatedPost.post_id) {
+      setPost(updatedPost);
+    }
+    // 返信リスト内の投稿が更新された場合
+    setReplies(currentReplies =>
+      currentReplies.map(p => p.post_id === updatedPost.post_id ? updatedPost : p)
+    );
+  };
+
+
 
   if (isLoading) return <div style={{padding: '20px'}}>読み込んでいます...</div>;
   if (error) return <div style={{padding: '20px', color: 'red'}}>エラー: {error}</div>;
@@ -87,6 +102,7 @@ export const PostDetailPage: React.FC = () => {
         error={null}
         onUpdate={() => fetchData(loginUser)} // このページのデータを再取得
         loginUser={loginUser}
+        onUpdateSinglePost={handleUpdateSinglePostInDetail} 
       />
       
       {/* 返信一覧をPostListコンポーネントで表示 */}
@@ -98,6 +114,7 @@ export const PostDetailPage: React.FC = () => {
           onUpdate={() => fetchData(loginUser)} // このページのデータを再取得
           loginUser={loginUser}
           title={replies.length > 0 ? "返信一覧" : undefined}
+          onUpdateSinglePost={handleUpdateSinglePostInDetail}
         />
       </div>
     </div>

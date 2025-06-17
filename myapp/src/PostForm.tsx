@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import toast from 'react-hot-toast';
+import { Post } from './PostList'; // ★ Postの型をインポート
 
 interface PostFormProps {
   loginUser: FirebaseUser;
-  onPostSuccess: () => void;
+  onPostSuccess: (newPost: Post) => void; // ★ 引数を取るように変更
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
@@ -67,13 +68,15 @@ export const PostForm: React.FC<PostFormProps> = ({ loginUser, onPostSuccess }) 
           });
     
           if (!postResponse.ok) { throw new Error('投稿に失敗しました。'); }
+
+          const newPostData: Post = await postResponse.json(); // ★ レスポンスをパース
     
           toast.success('投稿に成功しました！');
           setContent('');
           setSelectedImage(null);
           setPreviewUrl(null);
           if(fileInputRef.current) { fileInputRef.current.value = ""; }
-          onPostSuccess();
+          onPostSuccess(newPostData);
     
         } catch (err: any) {
           toast.error(`エラー: ${err.message}`);

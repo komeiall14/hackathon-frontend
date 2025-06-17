@@ -9,6 +9,8 @@ import toast from 'react-hot-toast';
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
+
+
 export const SearchResults: React.FC = () => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -17,6 +19,11 @@ export const SearchResults: React.FC = () => {
     
     const location = useLocation();
     const query = new URLSearchParams(location.search).get('q');
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+      }, []);
+    
 
     const fetchSearchResults = useCallback(async () => {
         if (!query) {
@@ -53,6 +60,12 @@ export const SearchResults: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
+    const handleUpdateSinglePostInSearch = (updatedPost: Post) => {
+        setPosts(currentPosts =>
+          currentPosts.map(p => p.post_id === updatedPost.post_id ? updatedPost : p)
+        );
+      };
+
     return (
         <div>
             <h1>検索結果</h1>
@@ -63,6 +76,7 @@ export const SearchResults: React.FC = () => {
                 error={error}
                 onUpdate={fetchSearchResults}
                 loginUser={loginUser}
+                onUpdateSinglePost={handleUpdateSinglePostInSearch}
             />
         </div>
     );

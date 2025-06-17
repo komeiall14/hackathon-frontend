@@ -7,11 +7,15 @@ import { PostList, Post } from './PostList';
 import { PostForm } from './PostForm';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
 import { FaHome, FaUser } from 'react-icons/fa'; // ★ アイコンを変更・追加
 import { PostDetailPage } from './PostDetailPage'; 
+import { QuoteRetweetsPage } from './QuoteRetweetsPage'; 
+import { useInView } from 'react-intersection-observer'; 
+import { FollowingPage } from './FollowingPage'; // ▼▼▼ 追加
+import { FollowersPage } from './FollowersPage'; // ▼▼▼ 追加
 
 interface User {
   id: string;
@@ -19,6 +23,8 @@ interface User {
   age: number | null;
   firebase_uid: string | null;
 }
+
+const PAGE_SIZE = 20; // 1ページあたりの投稿数
 
 function App() {
   const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
@@ -34,39 +40,65 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState<boolean>(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true); // さらに読み込む投稿があるか
+  const { ref } = useInView({
+    threshold: 0,
+    skip: posts.length === 0,
+    // `onChange`を使い、監視対象の表示状態が「変化した瞬間」にのみ処理を実行する
+    onChange: (inView, entry) => {
+      // 画面内に入り(inView=true)、さらに読み込むデータがあり(hasMore=true)、
+      // 現在ロード中でない(!isLoading)場合にのみ、次のページを取得する
+      if (inView && hasMore && !isLoading) {
+        void fetchPosts(false, loginUser);
+      }
+    },
+  });
 
-  // ★ 変更点1: fetchPostsが引数(currentUser)を取り、認証情報をヘッダーに含めるように修正
-  const fetchPosts = useCallback(async (currentUser: FirebaseUser | null) => {
+  // ▼▼▼ 変更点2: useCallbackの依存配列を修正 ▼▼▼
+  const fetchPosts = useCallback(async (isInitialLoad: boolean, currentUser: FirebaseUser | null) => {
+    // 呼び出し元のuseEffectでisLoadingをチェックするため、ここでのチェックは不要
+    // if (isLoading && !isInitialLoad) return;
+
     setIsLoading(true);
     
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
     if (currentUser) {
       try {
         const token = await currentUser.getIdToken();
         headers['Authorization'] = `Bearer ${token}`;
-      } catch (error) {
-        console.error("IDトークンの取得に失敗:", error);
-      }
+      } catch (error) { console.error("IDトークンの取得に失敗:", error); }
     }
 
-    try {
-      const response = await fetch(`${BACKEND_API_URL}/posts`, { headers });
+    const currentOffset = isInitialLoad ? 0 : offset;
 
-      if (!response.ok) {
-        throw new Error('データの取得に失敗しました。');
-      }
+    try {
+      const response = await fetch(`${BACKEND_API_URL}/posts?limit=${PAGE_SIZE}&offset=${currentOffset}`, { headers });
+      if (!response.ok) throw new Error('データの取得に失敗しました。');
+      
       const data: Post[] = await response.json();
-      setPosts(data);
+
+      if (isInitialLoad) {
+        setPosts(data);
+      } else {
+        setPosts(prevPosts => [...prevPosts, ...data]);
+      }
+      
+      if (data.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
+      
+      setOffset(currentOffset + data.length);
+
     } catch (err: any) {
       setError(err.message);
-      toast.error(err.message); 
+      // toast.errorはuseEffect側でハンドリングした方が良い場合もある
     } finally {
       setIsLoading(false);
     }
-  }, [BACKEND_API_URL]);
+  // ▼▼▼ 依存配列から `isLoading` を削除する ▼▼▼
+  }, [BACKEND_API_URL, offset, setPosts, setHasMore, setOffset, setIsLoading, setError]);
   
   const fetchAllUsers = useCallback(async () => {
     setMessage('Loading users...');
@@ -88,13 +120,23 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
       setLoginUser(user);
-      fetchPosts(user); // ログイン状態を元に投稿を取得
-      if (user) {
-        fetchAllUsers();
-      }
+      setPosts([]);
+      setOffset(0);
+      setHasMore(true);
+      fetchPosts(true, user); // 引数を2つ渡す
     });
     return () => unsubscribe();
-  }, [fetchPosts, fetchAllUsers]);
+  }, []); // このuseEffectは初回のみ実行するため、依存配列は空
+
+  const handlePostCreation = (newPost: Post) => {
+    setPosts(prevPosts => [newPost, ...prevPosts]);
+  };
+
+  const handleUpdateSinglePost = (updatedPost: Post) => {
+    setPosts(currentPosts => 
+      currentPosts.map(p => p.post_id === updatedPost.post_id ? updatedPost : p)
+    );
+  };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,32 +191,47 @@ function App() {
         
         <aside className="left-sidebar">
           <h2>ナビゲーション</h2>
-          
-          <Link to="/" className="nav-link">
-            <FaHome /> {/* アイコンをホームに変更 */}
+
+          {/* ▼▼▼ このLinkコンポーネントを修正 ▼▼▼ */}
+          <Link 
+            to="/" 
+            className="nav-link" 
+            onClick={() => {
+              // もし既にホーム('/')にいる場合
+              if (location.pathname === '/') {
+                // ページの一番上にスムーズにスクロール
+                window.scrollTo({
+                  top: 0,
+                  behavior: 'smooth'
+                });
+                // さらに、最新の投稿を取得するためにデータを再読み込み
+                void fetchPosts(true, loginUser);
+              }
+              // 他のページにいる場合は、Linkのデフォルトの挙動（ホームへの画面遷移）に任せる
+            }}
+          >
+            <FaHome />
             <span style={{ marginLeft: '16px' }}>ホーム</span>
           </Link>
 
-          {/* ★ 変更点3: ログイン時のみプロフィールへのリンクを表示 */}
           {loginUser && (
             <Link to={`/users/${loginUser.uid}`} className="nav-link">
               <FaUser />
               <span style={{ marginLeft: '16px' }}>プロフィール</span>
             </Link>
           )}
-          
-          <LoginForm onLoginSuccess={() => {
+
+          <LoginForm 
+            onLoginSuccess={() => {
               fetchAllUsers();
-              // ★ 変更点4: ログイン成功後も、現在のログインユーザー情報で投稿を再取得
-              fetchPosts(fireAuth.currentUser); 
+              void fetchPosts(true, fireAuth.currentUser); 
             }} 
           />
-          
+
           <button className="sidebar-button" onClick={() => setShowUserManagement(true)}>
             ユーザー管理
           </button>
-        </aside>
-      
+        </aside>      
         <main className="main-content">
           <Routes>
             <Route path="/" element={
@@ -183,24 +240,33 @@ function App() {
                 {loginUser && (
                   <section className="post-form-section">
                     {/* ★ 変更点5: onPostSuccessで現在のログインユーザーを渡す */}
-                    <PostForm loginUser={loginUser} onPostSuccess={() => fetchPosts(loginUser)} />
+                    <PostForm loginUser={loginUser} onPostSuccess={handlePostCreation} />
                   </section>
                 )}
                 <PostList 
                   posts={posts} 
-                  isLoading={isLoading} 
+                  isLoading={isLoading && posts.length === 0} 
                   error={error} 
                   // ★ 変更点6: onUpdateで現在のログインユーザーを渡す
-                  onUpdate={() => fetchPosts(loginUser)}
-                  loginUser={loginUser} 
+                  onUpdate={() => { setPosts([]); setOffset(0); setHasMore(true); void fetchPosts(true, loginUser); }}
+                  onPostCreated={handlePostCreation}
+                  loginUser={loginUser}  
+                  onUpdateSinglePost={handleUpdateSinglePost}
                   title="投稿一覧" 
                 />
+                <div ref={ref} style={{ height: '50px', textAlign: 'center' }}>
+                  {isLoading && posts.length > 0 && "読み込み中..."}
+                  {!hasMore && posts.length > 0 && "これ以上投稿はありません"}
+                </div>
               </>
             } />
             
             <Route path="/users/:userId" element={<UserProfile />} />
             <Route path="/search" element={<SearchResults />} />
             <Route path="/status/:postId" element={<PostDetailPage />} />
+            <Route path="/status/:postId/quotes" element={<QuoteRetweetsPage />} />
+            <Route path="/users/:userId/following" element={<FollowingPage />} />
+          <Route path="/users/:userId/followers" element={<FollowersPage />} />
           </Routes>
         </main>
         

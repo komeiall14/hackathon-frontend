@@ -1,0 +1,61 @@
+.user-list-container {
+    border-top: 1px solid #38444d;
+  }
+  
+  .user-list-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #38444d;
+  }
+  
+  .user-list-item-link {
+    display: flex;
+    align-items: flex-start;
+    text-decoration: none;
+    color: inherit;
+    flex-grow: 1;
+  }
+  
+  .user-list-item-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+  }
+  
+  .user-list-item-body {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .user-list-item-name {
+    font-weight: bold;
+  }
+  
+  .user-list-item-bio {
+    margin: 4px 0 0 0;
+    color: #8899a6;
+    font-size: 15px;
+  }
+  
+  /* UserProfile.cssからボタンのスタイルを流用 */
+  .follow-btn, .following-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0; /* ボタンが縮まないようにする */
+    margin-left: 12px;
+  }
+  .follow-btn {
+    background-color: white; color: #15202b; border: 1px solid white;
+  }
+  .following-btn {
+    background-color: transparent; color: white; border: 1px solid #536471;
+  }
+  .following-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1); color: #f4212e; border-color: rgba(239, 68, 68, 0.5);
+  }
