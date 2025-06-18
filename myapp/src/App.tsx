@@ -7,16 +7,18 @@ import { PostList, Post } from './PostList';
 import { PostForm } from './PostForm';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
-import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
-import { FaHome, FaUser } from 'react-icons/fa'; // ★ アイコンを変更・追加
+import { FaHome, FaUser, FaEnvelope } from 'react-icons/fa'; // ★ アイコンを変更・追加
 import { PostDetailPage } from './PostDetailPage'; 
 import { QuoteRetweetsPage } from './QuoteRetweetsPage'; 
 import { useInView } from 'react-intersection-observer'; 
 import { FollowingPage } from './FollowingPage'; // ▼▼▼ 追加
 import { FollowersPage } from './FollowersPage'; // ▼▼▼ 追加
+import { MessagesPage } from './MessagesPage';
 import { Trends } from './Trends'; 
+
 
 interface User {
   id: string;
@@ -222,6 +224,11 @@ function App() {
             </Link>
           )}
 
+          <Link to="/messages" className="nav-link">
+            <FaEnvelope />
+            <span style={{ marginLeft: '16px' }}>メッセージ</span>
+          </Link>
+
           <LoginForm 
             onLoginSuccess={() => {
               fetchAllUsers();
@@ -234,41 +241,7 @@ function App() {
           </button>
         </aside>      
         <main className="main-content">
-          <Routes>
-            <Route path="/" element={
-              <>
-                <h1>ホーム</h1>
-                {loginUser && (
-                  <section className="post-form-section">
-                    {/* ★ 変更点5: onPostSuccessで現在のログインユーザーを渡す */}
-                    <PostForm loginUser={loginUser} onPostSuccess={handlePostCreation} />
-                  </section>
-                )}
-                <PostList 
-                  posts={posts} 
-                  isLoading={isLoading && posts.length === 0} 
-                  error={error} 
-                  // ★ 変更点6: onUpdateで現在のログインユーザーを渡す
-                  onUpdate={() => { setPosts([]); setOffset(0); setHasMore(true); void fetchPosts(true, loginUser); }}
-                  onPostCreated={handlePostCreation}
-                  loginUser={loginUser}  
-                  onUpdateSinglePost={handleUpdateSinglePost}
-                  title="投稿一覧" 
-                />
-                <div ref={ref} style={{ height: '50px', textAlign: 'center' }}>
-                  {isLoading && posts.length > 0 && "読み込み中..."}
-                  {!hasMore && posts.length > 0 && "これ以上投稿はありません"}
-                </div>
-              </>
-            } />
-            
-            <Route path="/users/:userId" element={<UserProfile />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/status/:postId" element={<PostDetailPage />} />
-            <Route path="/status/:postId/quotes" element={<QuoteRetweetsPage />} />
-            <Route path="/users/:userId/following" element={<FollowingPage />} />
-          <Route path="/users/:userId/followers" element={<FollowersPage />} />
-          </Routes>
+            <Outlet context={{ loginUser }} />
         </main>
         
         <aside className="right-sidebar">

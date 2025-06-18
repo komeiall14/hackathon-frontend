@@ -1,0 +1,34 @@
+.message-container {
+    display: flex;
+    margin-bottom: 10px;
+    max-width: 70%;
+  }
+  
+  /* 相手のメッセージは左寄せ */
+  .message-container.other {
+    justify-content: flex-start;
+  }
+  
+  /* 自分のメッセージは右寄せ */
+  .message-container.own {
+    justify-content: flex-end;
+    margin-left: auto; /* 右寄せのキー */
+  }
+  
+  .message-bubble {
+    padding: 10px 15px;
+    border-radius: 20px;
+    word-wrap: break-word;
+  }
+  
+  .message-container.other .message-bubble {
+    background-color: #38444d;
+    color: white;
+    border-top-left-radius: 5px;
+  }
+  
+  .message-container.own .message-bubble {
+    background-color: #1da1f2;
+    color: white;
+    border-top-right-radius: 5px;
+  }

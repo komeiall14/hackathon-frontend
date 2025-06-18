@@ -121,3 +121,25 @@
     color: #f4212e;
     border-color: rgba(239, 68, 68, 0.5);
 }
+
+/* src/UserProfile.css の末尾に追記 */
+
+.dm-btn {
+    padding: 8px; /* アイコンなので左右のpaddingは不要 */
+    margin-right: 8px; /* 隣のボタンとの間隔 */
+    border-radius: 50%; /* 丸いボタンにする */
+    width: 38px; /* 幅と高さを指定して正円にする */
+    height: 38px;
+    display: flex; /* アイコンを中央に配置するため */
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #536471; /* フォロー中ボタンと色を合わせる */
+    background-color: transparent;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .dm-btn:hover {
+    background-color: rgba(29, 161, 242, 0.1); /* Twitterの青色に合わせる */
+  }

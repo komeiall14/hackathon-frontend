@@ -63,11 +63,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div style={{ marginBottom: '20px' }}>
-            <button onClick={signInWithGoogle} style={{ marginRight: '10px', padding: '10px 20px', fontSize: '16px' }}>
+        <div className="auth-button-container">
+            <button onClick={signInWithGoogle} className="pill-button secondary">
                 Googleでログイン
             </button>
-            <button onClick={signOutWithGoogle} style={{ padding: '10px 20px', fontSize: '16px' }}>
+            <button onClick={signOutWithGoogle} className="pill-button secondary">
                 ログアウト
             </button>
         </div>

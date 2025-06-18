@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { FaEnvelope } from 'react-icons/fa';
 import { Post, PostList } from './PostList';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { fireAuth } from './firebase';
@@ -121,6 +122,39 @@ export const UserProfile: React.FC = () => {
     }
   };
 
+  const handleStartConversation = async () => {
+    // ログインしていない、またはプロフィールデータがない場合は何もしない
+    if (!loginUser || !userProfile || !userProfile.firebase_uid) {
+      toast.error("ログインが必要です。");
+      return;
+    }
+
+    try {
+      const token = await loginUser.getIdToken();
+      // 既存の「新規会話開始API」を呼び出す
+      const response = await fetch(`${BACKEND_API_URL}/api/new-conversation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ recipient_id: userProfile.firebase_uid }),
+      });
+
+      if (!response.ok) {
+        throw new Error('会話の開始に失敗しました。');
+      }
+      
+      const data = await response.json();
+      
+      // APIから返された会話IDを使って、メッセージ画面に遷移
+      navigate(`/messages/${data.conversation_id}`);
+
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+  
   // ログイン状態が変化したらデータを再取得するように修正
   useEffect(() => {
     // 認証チェックが完了していなければ、データ取得を開始しない
@@ -172,16 +206,23 @@ export const UserProfile: React.FC = () => {
 
       <div className="profile-info">
         <div className="profile-action">
-          {/* is_meフラグでボタンを出し分ける */}
           {userProfile.is_me ? (
             <button onClick={() => setIsEditModalOpen(true)} className="edit-profile-btn">
               プロフィールを編集
             </button>
           ) : (
-            // フォロー/アンフォローボタン
-            <button onClick={handleFollowToggle} className={userProfile.is_following ? 'following-btn' : 'follow-btn'}>
-              {userProfile.is_following ? 'フォロー中' : 'フォローする'}
-            </button>
+            <>
+              {/* DMボタン: フォロー中の場合にのみ表示 */}
+              {userProfile.is_following && (
+                <button onClick={handleStartConversation} className="dm-btn" title="メッセージを送信">
+                  <FaEnvelope />
+                </button>
+              )}
+              {/* フォロー/アンフォローボタン */}
+              <button onClick={handleFollowToggle} className={userProfile.is_following ? 'following-btn' : 'follow-btn'}>
+                {userProfile.is_following ? 'フォロー中' : 'フォローする'}
+              </button>
+            </>
           )}
         </div>
         <h2 className="profile-name">{userProfile.name}</h2>

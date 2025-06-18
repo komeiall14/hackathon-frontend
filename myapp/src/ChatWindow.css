@@ -1,0 +1,33 @@
+.chat-window-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .messages-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .chat-window-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #8899a6;
+  }
+
+  /* src/ChatWindow.css の末尾に追記 */
+
+    .no-messages-info {
+    margin: auto; /* 上下左右中央に配置 */
+    text-align: center;
+    color: #8899a6;
+    }
+
+    .no-messages-info p {
+    margin: 5px 0;
+    }

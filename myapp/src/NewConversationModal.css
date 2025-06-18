@@ -1,0 +1,47 @@
+/* NewConversationModal.css (新規作成) */
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(91, 112, 131, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* 上から表示 */
+    padding-top: 10vh;
+    z-index: 1000;
+  }
+  .modal-content {
+    background-color: #15202b;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    display: flex; align-items: center; padding: 12px 16px;
+    border-bottom: 1px solid #38444d;
+  }
+  .modal-header h3 { margin: 0; flex-grow: 1; }
+  .close-button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  
+  .modal-body { overflow-y: auto; padding: 16px; }
+  .search-form { display: flex; gap: 10px; margin-bottom: 20px; }
+  .search-form input { 
+      flex-grow: 1; padding: 10px; border-radius: 20px; border: 1px solid #38444d;
+      background-color: #202327; color: white; outline: none;
+  }
+  .search-form button {
+      padding: 8px 16px; border-radius: 20px; border: none; background-color: #1da1f2;
+      color: white; font-weight: bold; cursor: pointer;
+  }
+  .search-results { max-height: 50vh; overflow-y: auto; }
+  .user-result-item {
+    display: flex; align-items: center; padding: 10px; cursor: pointer;
+    border-radius: 8px;
+  }
+  .user-result-item:hover { background-color: #1a2a3a; }
+  .user-result-item img {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px;
+  }
