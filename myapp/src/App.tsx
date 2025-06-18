@@ -286,6 +286,20 @@ function App() {
     };
   }, []); 
 
+  useEffect(() => {
+    // 初回レンダリング時は実行しない
+    if (refreshKey === 0) {
+      return;
+    }
+
+    // タイムラインの状態を初期化し、最新の投稿を先頭から取得する
+    setPosts([]);
+    setOffset(0);
+    setHasMore(true);
+    fetchPosts(true, loginUser);
+
+  }, [refreshKey]); // refreshKey の変更を監視
+
   const handlePostCreation = (newPost: Post) => {
     setPosts(prevPosts => [newPost, ...prevPosts]);
   };
@@ -443,7 +457,27 @@ function App() {
           </button>
         </aside>
         <main className="main-content">
-            <Outlet context={{ loginUser, triggerRefresh }} />
+            {/* ▼▼▼ このOutletのcontextを修正 ▼▼▼ */}
+            <Outlet context={{ 
+              // 既存のcontext
+              loginUser, 
+              triggerRefresh,
+
+              // タイムライン用のstateと関数を追加で渡す
+              posts,
+              isLoading: isLoading && posts.length === 0, // 初回ロード中のみisLoadingをtrueにする
+              error,
+              hasMore,
+              bottomRef: ref, // useInView の ref を渡す
+              onPostCreation: handlePostCreation,
+              onUpdateSinglePost: handleUpdateSinglePost,
+              onUpdate: () => {
+                setPosts([]);
+                setOffset(0);
+                setHasMore(true);
+                fetchPosts(true, loginUser);
+              }
+            }} />
         </main>
         
         <aside className="right-sidebar">

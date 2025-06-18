@@ -222,7 +222,7 @@ const renderContentWithLinks = (content: string | null) => {
   }
 
   // ハッシュタグを検出するための正規表現
-  const hashtagRegex = /(#\w+)/g;
+  const hashtagRegex = /(#[\p{L}\p{N}_]+)/gu;
   const parts = content.split(hashtagRegex);
 
   return (
