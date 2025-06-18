@@ -10,6 +10,7 @@ import { useInView } from 'react-intersection-observer';
 // App.tsxから渡されるcontextの型を定義
 interface AppContextType {
   loginUser: FirebaseUser | null;
+  triggerRefresh: () => void;
 }
 
 const PAGE_SIZE = 20;
@@ -17,7 +18,7 @@ const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8
 
 export const Home: React.FC = () => {
   // OutletのcontextからloginUserを取得
-  const { loginUser } = useOutletContext<AppContextType>();
+  const { loginUser, triggerRefresh } = useOutletContext<AppContextType>();
   
   // Homeコンポーネントで投稿に関する状態を管理
   const [posts, setPosts] = useState<Post[]>([]);
@@ -71,7 +72,7 @@ export const Home: React.FC = () => {
     setOffset(0);
     setHasMore(true);
     fetchPosts(true, loginUser);
-  }, [loginUser]); // loginUserが変わるたびに実行
+  }, [loginUser, triggerRefresh]); // triggerRefreshを依存配列に追加
 
   const { ref } = useInView({
     threshold: 0,

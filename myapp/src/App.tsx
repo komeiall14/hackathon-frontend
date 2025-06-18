@@ -49,6 +49,8 @@ function App() {
   const [hasMore, setHasMore] = useState(true); // さらに読み込む投稿があるか
   const [isContinuousBotMode, setIsContinuousBotMode] = useState(false); // 継続モードのON/OFF状態
   const intervalRef = useRef<NodeJS.Timeout | null>(null); // タイマーのIDを保持
+  const [refreshKey, setRefreshKey] = useState(0);
+  const triggerRefresh = () => setRefreshKey(prev => prev + 1);
  
   const { ref } = useInView({
     threshold: 0,
@@ -93,7 +95,7 @@ function App() {
         }, 1500);
       } else {
         // 継続モードの場合はタイムラインを再取得して静かに更新
-        void fetchPosts(true, loginUser);
+        triggerRefresh();
       }
 
     } catch (err: any) {
@@ -124,10 +126,10 @@ function App() {
       // まず一度すぐに実行
       void handleCreateBotAndPost(false);
 
-      // その後、30秒ごとに繰り返し実行
+      // その後、5秒ごとに繰り返し実行
       intervalRef.current = setInterval(() => {
         void handleCreateBotAndPost(false); // ページリロードなしで実行
-      }, 5000); // 30000ミリ秒 = 30秒
+      }, 5000); // 5秒
     }
   };
   // ▲▲▲【ここまで追加】▲▲▲
@@ -441,7 +443,7 @@ function App() {
           </button>
         </aside>
         <main className="main-content">
-            <Outlet context={{ loginUser }} />
+            <Outlet context={{ loginUser, triggerRefresh }} />
         </main>
         
         <aside className="right-sidebar">
