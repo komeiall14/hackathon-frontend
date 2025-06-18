@@ -585,3 +585,16 @@ h1, h2 {
   box-sizing: border-box;
   border: 2px solid #15202B; /* 背景色と同じ色で縁取り */
 }
+
+/* src/App.css の末尾に追記 */
+
+/* bookmark-button のスタイル */
+.post-actions .bookmark-button {
+  transition: color 0.2s;
+}
+.post-actions .bookmark-button:hover {
+  color: #1DA1F2; /* Twitterの青色 */
+}
+.post-actions .bookmark-button.bookmarked {
+  color: #1DA1F2;
+}

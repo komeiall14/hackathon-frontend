@@ -19,6 +19,7 @@ import { MessagesPage } from './MessagesPage';
 import { ChatWindow } from './ChatWindow'; // ChatWindowもインポート
 import { Home } from './Home'; // Homeコンポーネントもインポート
 import { NotificationsPage } from './NotificationsPage';
+import { BookmarksPage } from './BookmarksPage';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -39,6 +40,7 @@ root.render(
           </Route>
 
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="bookmarks" element={<BookmarksPage />} />
 
           {/* その他のページのルーティング */}
           <Route path="users/:userId" element={<UserProfile />} />

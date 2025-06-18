@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { Routes, Route, Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
-import { FaHome, FaUser, FaEnvelope, FaBell } from 'react-icons/fa'; // ★ アイコンを変更・追加
+import { FaHome, FaUser, FaEnvelope, FaBell, FaBookmark } from 'react-icons/fa'; // ★ アイコンを変更・追加
 import { PostDetailPage } from './PostDetailPage'; 
 import { QuoteRetweetsPage } from './QuoteRetweetsPage'; 
 import { useInView } from 'react-intersection-observer'; 
@@ -278,6 +278,11 @@ function App() {
               )}
             </div>
             <span style={{ marginLeft: '16px' }}>通知</span>
+          </Link>
+
+          <Link to="/bookmarks" className="nav-link">
+              <FaBookmark />
+              <span style={{ marginLeft: '16px' }}>ブックマーク</span>
           </Link>
 
           <LoginForm 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; // useEffect をインポート
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
-import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, FaEye } from 'react-icons/fa';
+import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, FaEye, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom'; 
 import { QuoteRetweetModal } from './QuoteRetweetModal';
 import { OriginalPost } from './OriginalPost';
@@ -19,6 +19,7 @@ export interface Post {
   reply_count: number;
   retweet_count: number;         // ★ この行を追加
   is_retweeted_by_me: boolean;  // ★ この行を追加
+  is_bookmarked_by_me: boolean; 
   original_post?: Post;
 }
 
@@ -46,23 +47,26 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [quotingPost, setQuotingPost] = useState<Post | null>(null);
   const [showRetweetMenu, setShowRetweetMenu] = useState<string | null>(null);
+  const [likingInProgress, setLikingInProgress] = useState<Set<string>>(new Set());
   
 
   // ★ 変更点3: handleLike関数を「Optimistic Update」方式に書き換える
   const handleLike = async (postToUpdate: Post) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
+
+    if (likingInProgress.has(postToUpdate.post_id)) return;
   
     const isLiked = postToUpdate.is_liked_by_me;
   
-    // 1. UIを楽観的に更新するために、親コンポーネントの関数を呼び出す
     const optimisticallyUpdatedPost = {
       ...postToUpdate,
       is_liked_by_me: !isLiked,
       like_count: isLiked ? postToUpdate.like_count - 1 : postToUpdate.like_count + 1,
     };
     onUpdateSinglePost(optimisticallyUpdatedPost);
-  
-    // 2. バックエンドにリクエスト
+
+    setLikingInProgress(prev => new Set(prev).add(postToUpdate.post_id));
+    
     const token = await loginUser.getIdToken();
     const method = isLiked ? 'DELETE' : 'POST';
     try {
@@ -73,11 +77,44 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
       if (!response.ok) { throw new Error('いいねの操作に失敗しました。'); }
     } catch (err: any) {
       toast.error(err.message);
-      // エラー時はUIを元の状態に戻す
       onUpdateSinglePost(postToUpdate);
+    } finally {
+      // ▼▼▼ このブロックを丸ごと追加 ▼▼▼
+      // 処理が成功しても失敗しても、最後に必ず実行される
+      // 処理中の投稿IDをセットから削除し、ボタンの無効化を解除する
+      setLikingInProgress(prev => {
+        const next = new Set(prev);
+        next.delete(postToUpdate.post_id);
+        return next;
+      });
+      // ▲▲▲ ここまで追加 ▲▲▲
     }
   };
   
+
+  const handleBookmark = async (postToUpdate: Post) => {
+    if (!loginUser) { toast.error('ログインしてください。'); return; }
+
+    const isBookmarked = postToUpdate.is_bookmarked_by_me;
+    const optimisticallyUpdatedPost = {
+        ...postToUpdate,
+        is_bookmarked_by_me: !isBookmarked,
+    };
+    onUpdateSinglePost(optimisticallyUpdatedPost);
+
+    const token = await loginUser.getIdToken();
+    const method = isBookmarked ? 'DELETE' : 'POST';
+    try {
+        const response = await fetch(`${BACKEND_API_URL}/api/posts/bookmark/${postToUpdate.post_id}`, {
+            method,
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) { throw new Error('ブックマーク操作に失敗しました。'); }
+    } catch (err: any) {
+        toast.error(err.message);
+        onUpdateSinglePost(postToUpdate); // エラー時は元に戻す
+    }
+  };
   const handleReplyButtonClick = (postId: string) => {
     setReplyingToPostId(postId === replyingToPostId ? null : postId);
     setReplyContent('');
@@ -323,8 +360,16 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                   <button
                     className={`like-button ${post.is_liked_by_me ? 'liked' : ''}`}
                     onClick={(e) => { e.stopPropagation(); handleLike(post); }} 
+                    disabled={likingInProgress.has(post.post_id)}
                   >
                     {post.is_liked_by_me ? <FaHeart /> : <FaRegHeart />} <span>{post.like_count}</span>
+                  </button>
+
+                  <button
+                      className={`bookmark-button ${post.is_bookmarked_by_me ? 'bookmarked' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); handleBookmark(post); }}
+                  >
+                      {post.is_bookmarked_by_me ? <FaBookmark /> : <FaRegBookmark />}
                   </button>
                 </div>
 
