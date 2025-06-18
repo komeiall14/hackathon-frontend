@@ -177,6 +177,38 @@ const handleRetweet = async (post: Post) => {
   }
 };
 
+const renderContentWithLinks = (content: string | null) => {
+  if (!content) {
+    return null;
+  }
+
+  // ハッシュタグを検出するための正規表現
+  const hashtagRegex = /(#\w+)/g;
+  const parts = content.split(hashtagRegex);
+
+  return (
+    <p className="post-content">
+      {parts.map((part, index) => {
+        if (hashtagRegex.test(part)) {
+          // ハッシュタグ部分の場合、Linkコンポーネントを生成
+          return (
+            <Link
+              key={index}
+              to={`/search?q=${encodeURIComponent(part)}`}
+              className="hashtag-link"
+              onClick={(e) => e.stopPropagation()} // 親要素のクリックイベントを抑制
+            >
+              {part}
+            </Link>
+          );
+        }
+        // 通常のテキスト部分
+        return part;
+      })}
+    </p>
+  );
+};
+
 if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投稿を読み込んでいます...</div>;
   if (error) return <div style={{padding: '20px', color: 'red'}}>エラー: {error}</div>;
 
@@ -222,7 +254,7 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                 {/* 通常投稿の場合、本文と画像を表示 */}
                 {!post.original_post && (
                   <>
-                    {post.content && <p className="post-content">{post.content}</p>}
+                    {renderContentWithLinks(post.content)}
                     {post.image_url && (
                       <img src={post.image_url} alt="投稿画像" className="post-image"/>
                     )}

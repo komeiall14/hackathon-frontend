@@ -16,6 +16,7 @@ import { QuoteRetweetsPage } from './QuoteRetweetsPage';
 import { useInView } from 'react-intersection-observer'; 
 import { FollowingPage } from './FollowingPage'; // ▼▼▼ 追加
 import { FollowersPage } from './FollowersPage'; // ▼▼▼ 追加
+import { Trends } from './Trends'; 
 
 interface User {
   id: string;
@@ -286,6 +287,7 @@ function App() {
               </div>
             </form>
           </section>
+          <Trends />
         </aside>
       </div>
 

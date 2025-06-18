@@ -16,10 +16,6 @@ export const PostDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null);
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   // ログイン状態を監視
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
@@ -27,6 +23,12 @@ export const PostDetailPage: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      window.scrollTo(0, 0);
+    }
+  }, [isLoading]);
 
   // 投稿とリプライを読み込む関数
   const fetchData = useCallback(async (currentUser: FirebaseUser | null) => {

@@ -37,8 +37,11 @@ export const UserProfile: React.FC = () => {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    // isLoadingがfalseになった（=読み込みが完了した）瞬間にスクロールする
+    if (!isLoading) {
+      window.scrollTo(0, 0);
+    }
+  }, [isLoading]); // isLoadingの状態を監視する
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
