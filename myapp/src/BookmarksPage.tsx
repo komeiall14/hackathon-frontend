@@ -5,6 +5,7 @@ import { useOutletContext } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';
 import { Post, PostList } from './PostList';
 import toast from 'react-hot-toast';
+import { PageHeader } from './PageHeader'; 
 
 interface AppContextType {
   loginUser: FirebaseUser | null;
@@ -51,7 +52,7 @@ export const BookmarksPage: React.FC = () => {
   
   return (
     <div>
-      <h1>ブックマーク</h1>
+      <PageHeader title="ブックマーク" />
       <PostList 
         posts={bookmarkedPosts}
         isLoading={isLoading}

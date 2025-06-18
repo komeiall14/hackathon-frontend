@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { UserProfileData } from './UserProfile';
 import { NotificationItem } from './NotificationItem';
 import './NotificationsPage.css';
+import { PageHeader } from './PageHeader'; // ★ インポートを追加
 
 // NotificationResponseの型定義
 export interface NotificationResponse {
@@ -64,7 +65,7 @@ export const NotificationsPage: React.FC = () => {
 
   return (
     <div>
-      <h1>通知</h1>
+      <PageHeader title="通知" />
       <div className="notifications-container">
         {isLoading ? (
           <p>読み込み中...</p>

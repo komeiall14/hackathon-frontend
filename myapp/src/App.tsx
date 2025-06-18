@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import './App.css';
 import { LoginForm } from './LoginForm';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
@@ -120,6 +120,39 @@ function App() {
       setMessage(`Error fetching users: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, [BACKEND_API_URL]);
+
+  // ▼▼▼ このuseEffectを丸ごと追加 ▼▼▼
+  useLayoutEffect(() => {
+    // ページ遷移が完了した後に実行される
+    
+    // タイムラインページ('/')に戻ってきた場合
+    if (location.pathname === '/') {
+      // sessionStorageに保存されたスクロール位置を取得
+      const savedScrollPos = sessionStorage.getItem('timelineScrollPos');
+      if (savedScrollPos) {
+        // 保存された位置にスクロールを復元
+        window.scrollTo(0, parseInt(savedScrollPos, 10));
+      }
+    }
+  }, [location.pathname]); // location.pathnameが変わるたびに実行
+
+  useEffect(() => {
+    // タイムラインページ('/')から離れる時に、現在のスクロール位置を保存する
+    const handleScroll = () => {
+      if (location.pathname === '/') {
+        sessionStorage.setItem('timelineScrollPos', String(window.scrollY));
+      }
+    };
+    
+    // スクロールイベントを監視
+    window.addEventListener('scroll', handleScroll);
+    
+    // クリーンアップ関数
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [location.pathname]);
+  // ▲▲▲ このuseEffectを丸ごと追加 ▲▲▲
 
   useEffect(() => {
     // ログインしていない場合は何もしない
@@ -292,8 +325,14 @@ function App() {
             }} 
           />
 
-          <button className="sidebar-button" onClick={() => setShowUserManagement(true)}>
-            ユーザー管理
+          <button 
+              className="sidebar-button" 
+              onClick={() => {
+                  fetchAllUsers(); // ★ この行を追加
+                  setShowUserManagement(true);
+              }}
+          >
+              ユーザー管理
           </button>
         </aside>      
         <main className="main-content">

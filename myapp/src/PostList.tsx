@@ -13,6 +13,8 @@ export interface Post {
   user_profile_image_url: string | null;
   content: string | null;
   image_url: string | null;
+  video_url: string | null;   // ★ 追加
+  media_type: 'image' | 'video' | null; // ★ 追加
   created_at: string;
   like_count: number;
   is_liked_by_me: boolean;
@@ -292,8 +294,11 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                 {!post.original_post && (
                   <>
                     {renderContentWithLinks(post.content)}
-                    {post.image_url && (
+                    {post.media_type === 'image' && post.image_url && (
                       <img src={post.image_url} alt="投稿画像" className="post-image"/>
+                    )}
+                    {post.media_type === 'video' && post.video_url && (
+                      <video src={post.video_url} controls className="post-video"></video>
                     )}
                   </>
                 )}

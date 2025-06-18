@@ -598,3 +598,13 @@ h1, h2 {
 .post-actions .bookmark-button.bookmarked {
   color: #1DA1F2;
 }
+
+/* src/App.css に追記 */
+
+.post-video {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  margin-top: 12px;
+  background-color: #000; /* 動画が読み込まれるまでの背景色を黒に指定 */
+}
