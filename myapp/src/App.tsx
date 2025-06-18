@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { LoginForm } from './LoginForm';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { Routes, Route, Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
-import { FaHome, FaUser, FaEnvelope, FaBell, FaBookmark } from 'react-icons/fa'; // ★ アイコンを変更・追加
+import { FaHome, FaUser, FaEnvelope, FaBell, FaBookmark, FaRobot } from 'react-icons/fa';
 import { PostDetailPage } from './PostDetailPage'; 
 import { QuoteRetweetsPage } from './QuoteRetweetsPage'; 
 import { useInView } from 'react-intersection-observer'; 
@@ -47,6 +47,9 @@ function App() {
   const location = useLocation();
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true); // さらに読み込む投稿があるか
+  const [isContinuousBotMode, setIsContinuousBotMode] = useState(false); // 継続モードのON/OFF状態
+  const intervalRef = useRef<NodeJS.Timeout | null>(null); // タイマーのIDを保持
+ 
   const { ref } = useInView({
     threshold: 0,
     skip: posts.length === 0,
@@ -59,8 +62,75 @@ function App() {
       }
     },
   });
+  
 
+  const [isCreatingBot, setIsCreatingBot] = useState(false); // Bot生成中の状態を管理
 
+  // handleCreateBotAndPost関数を以下のように修正
+  const handleCreateBotAndPost = async (shouldReload: boolean) => { // 引数 shouldReload を追加
+    setIsCreatingBot(true);
+    // 継続モードの場合はloadingトーストは不要なので、単発の場合のみ表示
+    if (shouldReload) {
+      toast.loading('AIボットを生成しています...');
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_API_URL}/api/bot/create-and-post`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('AIボットの生成に失敗しました。');
+      }
+
+      toast.dismiss();
+      toast.success('新しいAIボットが投稿しました！');
+      
+      // 引数がtrueの場合のみページをリロードする
+      if (shouldReload) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        // 継続モードの場合はタイムラインを再取得して静かに更新
+        void fetchPosts(true, loginUser);
+      }
+
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.message);
+    } finally {
+      setIsCreatingBot(false);
+    }
+  };
+
+  // handleCreateBotAndPost関数の下あたりに、以下の関数を丸ごと追加
+
+  const toggleContinuousBotMode = () => {
+    // もし現在、継続モードがONなら、停止処理を行う
+    if (isContinuousBotMode) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current); // タイマーを停止
+        intervalRef.current = null;
+      }
+      setIsContinuousBotMode(false); // モードをOFFに
+      toast.success("AIボットの継続投稿を停止しました。");
+    } 
+    // もし現在、継続モードがOFFなら、開始処理を行う
+    else {
+      setIsContinuousBotMode(true); // モードをONに
+      toast.success("AIボットの継続投稿を開始しました。5秒ごとに投稿されます。");
+      
+      // まず一度すぐに実行
+      void handleCreateBotAndPost(false);
+
+      // その後、30秒ごとに繰り返し実行
+      intervalRef.current = setInterval(() => {
+        void handleCreateBotAndPost(false); // ページリロードなしで実行
+      }, 5000); // 30000ミリ秒 = 30秒
+    }
+  };
+  // ▲▲▲【ここまで追加】▲▲▲
   // ▼▼▼ 変更点2: useCallbackの依存配列を修正 ▼▼▼
   const fetchPosts = useCallback(async (isInitialLoad: boolean, currentUser: FirebaseUser | null) => {
     // 呼び出し元のuseEffectでisLoadingをチェックするため、ここでのチェックは不要
@@ -205,6 +275,15 @@ function App() {
     return () => unsubscribe();
   }, []); // このuseEffectは初回のみ実行するため、依存配列は空
 
+  useEffect(() => {
+    // このコンポーネントがアンマウント（ページから消える）される時に実行される処理
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current); // タイマーが動いていれば停止する
+      }
+    };
+  }, []); 
+
   const handlePostCreation = (newPost: Post) => {
     setPosts(prevPosts => [newPost, ...prevPosts]);
   };
@@ -324,17 +403,43 @@ function App() {
               void fetchPosts(true, fireAuth.currentUser); 
             }} 
           />
+          
+          {/* ▼▼▼ 変更点1: 既存ボタンのonClickを修正 ▼▼▼ */}
+          <button 
+              className="sidebar-button"
+              onClick={() => handleCreateBotAndPost(true)}
+              disabled={isCreatingBot}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FaRobot style={{ marginRight: '8px' }}/>
+              <span>{isCreatingBot ? '生成中...' : 'AIボット投稿'}</span>
+            </div>
+          </button>
 
+          {/* ▼▼▼ 変更点2: 新しい継続モード用のボタンを追加 ▼▼▼ */}
+          <button
+            className="sidebar-button"
+            onClick={toggleContinuousBotMode}
+            style={{ 
+              backgroundColor: isContinuousBotMode ? '#e0245e' : '#1DA1F2', // ON/OFFで色を変更
+              marginTop: '10px'
+            }}
+          >
+            {isContinuousBotMode ? 'AIボット継続投稿 停止' : 'AIボット継続投稿 開始'}
+          </button>
+          
+          {/* ▼▼▼ 変更点3: レイアウト調整 ▼▼▼ */}
           <button 
               className="sidebar-button" 
               onClick={() => {
-                  fetchAllUsers(); // ★ この行を追加
+                  fetchAllUsers();
                   setShowUserManagement(true);
               }}
+              style={{ marginTop: '10px' }} // 上のボタンとの間隔を追加
           >
               ユーザー管理
           </button>
-        </aside>      
+        </aside>
         <main className="main-content">
             <Outlet context={{ loginUser }} />
         </main>

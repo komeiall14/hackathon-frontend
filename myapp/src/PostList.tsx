@@ -313,7 +313,7 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                     <FaRegComment /> <span>{post.reply_count}</span>
                   </button>
 
-                  {loginUser?.uid === post.user_id && (
+                  {loginUser && (loginUser.uid === post.user_id || post.user_id.startsWith('bot_')) && (
                       <button onClick={(e) => { e.stopPropagation(); handleDeletePost(post.post_id); }} title="削除">
                           <FaTrashAlt />
                       </button>
