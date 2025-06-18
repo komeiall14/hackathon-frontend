@@ -1,0 +1,38 @@
+/* src/NotificationsPage.css （新規作成） */
+
+.notification-item {
+    display: flex;
+    padding: 16px;
+    border-bottom: 1px solid #38444d;
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.2s;
+  }
+  .notification-item:hover {
+    background-color: #1a2a3a;
+  }
+  .notification-item.unread {
+    border-left: 2px solid #1DA1F2;
+  }
+  .notification-icon-container {
+    margin-right: 12px;
+    font-size: 24px;
+  }
+  .icon.like { color: #e0245e; }
+  .icon.reply { color: #1DA1F2; }
+  .icon.follow { color: #17bf63; }
+  
+  .notification-content {
+    display: flex;
+    flex-direction: column;
+  }
+  .notification-actor-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-bottom: 8px;
+  }
+  .notification-content p {
+    margin: 0;
+    line-height: 1.5;
+  }

@@ -18,6 +18,7 @@ import { FollowersPage } from './FollowersPage';
 import { MessagesPage } from './MessagesPage';
 import { ChatWindow } from './ChatWindow'; // ChatWindowもインポート
 import { Home } from './Home'; // Homeコンポーネントもインポート
+import { NotificationsPage } from './NotificationsPage';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -36,6 +37,8 @@ root.render(
           <Route path="messages" element={<MessagesPage />}>
             <Route path=":conversationId" element={<ChatWindow />} />
           </Route>
+
+          <Route path="notifications" element={<NotificationsPage />} />
 
           {/* その他のページのルーティング */}
           <Route path="users/:userId" element={<UserProfile />} />

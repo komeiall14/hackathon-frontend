@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { Routes, Route, Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
-import { FaHome, FaUser, FaEnvelope } from 'react-icons/fa'; // ★ アイコンを変更・追加
+import { FaHome, FaUser, FaEnvelope, FaBell } from 'react-icons/fa'; // ★ アイコンを変更・追加
 import { PostDetailPage } from './PostDetailPage'; 
 import { QuoteRetweetsPage } from './QuoteRetweetsPage'; 
 import { useInView } from 'react-intersection-observer'; 
@@ -43,6 +43,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState<boolean>(false);
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true); // さらに読み込む投稿があるか
@@ -58,6 +59,7 @@ function App() {
       }
     },
   });
+
 
   // ▼▼▼ 変更点2: useCallbackの依存配列を修正 ▼▼▼
   const fetchPosts = useCallback(async (isInitialLoad: boolean, currentUser: FirebaseUser | null) => {
@@ -118,6 +120,45 @@ function App() {
       setMessage(`Error fetching users: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, [BACKEND_API_URL]);
+
+  useEffect(() => {
+    // ログインしていない場合は何もしない
+    if (!loginUser) {
+        setUnreadCount(0); // ログアウトしたらカウントをリセット
+        return;
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        const token = await loginUser.getIdToken();
+        const response = await fetch(`${BACKEND_API_URL}/api/notifications/unread-count`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setUnreadCount(data.count);
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+
+    // 最初に一度取得
+    fetchUnreadCount(); 
+
+    // 30秒ごとに未読件数をポーリング（定期取得）
+    const intervalId = setInterval(fetchUnreadCount, 30000); 
+
+    // コンポーネントがアンマウントされる時にインターバルをクリア
+    return () => clearInterval(intervalId);
+
+  }, [loginUser]); // loginUserが変わった時（ログイン/ログアウト時）に実行
+  
+  // 通知ページにいる場合は、カウントを0にする
+  useEffect(() => {
+    if (location.pathname === '/notifications') {
+      setUnreadCount(0);
+    }
+  }, [location.pathname]);
 
   // ★ 変更点2: ログイン状態が変化した際に、そのユーザー情報(user)をfetchPostsに渡すように修正
   useEffect(() => {
@@ -227,6 +268,16 @@ function App() {
           <Link to="/messages" className="nav-link">
             <FaEnvelope />
             <span style={{ marginLeft: '16px' }}>メッセージ</span>
+          </Link>
+
+          <Link to="/notifications" className="nav-link">
+            <div className="nav-link-icon-wrapper">
+              <FaBell />
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+              )}
+            </div>
+            <span style={{ marginLeft: '16px' }}>通知</span>
           </Link>
 
           <LoginForm 
