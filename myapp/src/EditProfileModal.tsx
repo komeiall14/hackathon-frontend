@@ -128,7 +128,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
               <input type="file" accept="image/*" ref={headerImageInputRef} onChange={(e) => handleImageChange(e, 'header')} style={{ display: 'none' }} />
             </div>
             <div className="profile-image-upload">
-              <img src={profileImagePreview || '/default-avatar.png'} alt="" />
+              <img src={profileImagePreview || '/default-avatar.png'} alt="Profile Preview" />
               <button
                 type="button"
                 onClick={() => profileImageInputRef.current?.click()}
@@ -147,6 +147,37 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
             <label htmlFor="bio">自己紹介</label>
             <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={4}></textarea>
           </div>
+
+          {/* ▼▼▼ ここからが追加部分です ▼▼▼ */}
+          <div style={{ borderTop: '1px solid #38444d', margin: '20px 0' }}></div>
+
+          <div className="form-group">
+            <label>パスワードとセキュリティ</label>
+            <p style={{ color: '#8899a6', fontSize: '14px', margin: '0 0 10px 0' }}>
+              このアカウントはGoogleで認証されています。パスワードの変更はGoogleアカウント設定で行ってください。
+            </p>
+            <a 
+              href="https://myaccount.google.com/security" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{
+                  display: 'inline-block',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  border: '1px solid #536471',
+                  textDecoration: 'none',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(231, 233, 234, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              Googleアカウント設定を開く
+            </a>
+          </div>
+          {/* ▲▲▲ ここまでが追加部分です ▲▲▲ */}
+
         </div>
         <div className="modal-footer">
           <button onClick={handleSave} disabled={isSubmitting}>
