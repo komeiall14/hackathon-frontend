@@ -1,0 +1,79 @@
+.ogp-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    margin-top: 10px;
+    border-radius: 15px;
+    border: 1px solid #38444d;
+    overflow: hidden;
+    transition: background-color 0.2s ease-in-out;
+  }
+  
+  .ogp-card-link:hover {
+    background-color: #1a2a3a;
+  }
+  
+  .ogp-card {
+    display: flex;
+    max-height: 130px;
+  }
+  
+  .ogp-image {
+    width: 130px;
+    height: 130px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border-right: 1px solid #38444d;
+  }
+  
+  .ogp-content {
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    min-width: 0; 
+  }
+  
+  .ogp-title, .ogp-description, .ogp-site-url {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
+  }
+  
+  .ogp-title {
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  
+  .ogp-description {
+    font-size: 14px;
+    color: #8899a6;
+    margin-bottom: 6px;
+  }
+  
+  .ogp-site-url {
+    font-size: 13px;
+    color: #8899a6;
+  }
+  
+  /* スケルトン用 */
+  .ogp-loading {
+    height: 80px;
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .ogp-skeleton-text {
+    background-color: #38444d;
+    border-radius: 4px;
+    height: 1em;
+    margin-bottom: 8px;
+  }
+  .ogp-skeleton-text.long { width: 80%; }
+  .ogp-skeleton-text.short { width: 50%; }

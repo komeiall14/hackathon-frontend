@@ -5,6 +5,7 @@ import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, 
 import { Link, useNavigate } from 'react-router-dom'; 
 import { QuoteRetweetModal } from './QuoteRetweetModal';
 import { OriginalPost } from './OriginalPost';
+import { OGPPreview } from './OGPPreview';
 
 export interface Post {
   post_id: string;
@@ -37,6 +38,14 @@ interface PostListProps {
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+
+const extractFirstUrl = (text: string | null): string | null => {
+  if (!text) return null;
+  // URLを検出するための正規表現
+  const urlRegex = /(https?:\/\/[^\s"'<>`]+)/g;
+  const match = text.match(urlRegex);
+  return match ? match[0] : null;
+};
 
 export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser, title, onPostCreated, onUpdateSinglePost }) => {
   // ... 以降のコードは変更なし
@@ -256,57 +265,66 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
       {/* postsの件数が0より大きい場合のみ「投稿一覧」ヘッダーを表示 */}
       {title && <h2>{title}</h2>}
       <div>
-        {posts.map((post) => ( // internalPosts → posts に変更
-          // ★ 投稿全体をクリックすると詳細ページに遷移するラッパー
-          <div key={post.post_id} className="post-item-wrapper" onClick={() => navigate(`/status/${post.post_id}`)}>
-            
-            {/* 通常のリツイートの場合に「〇〇さんがリツイートしました」ヘッダーを表示 */}
-            {post.original_post && !post.content && (
-              <div className="retweet-header">
-                <FaRetweet />
-                <span>{post.user_name}さんがリツイートしました</span>
-              </div>
-            )}
-
-            <div className="post-item">
-              <div className="post-avatar">
-                <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()}>
-                  <img 
-                    src={post.user_profile_image_url || '/default-avatar.png'} 
-                    alt={`${post.user_name}のアバター`} 
-                  />
-                </Link>
-              </div>
-              <div className="post-body">
-                <div className="post-header">
-                  <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{textDecoration: 'none', color: 'inherit'}}>
-                    <span className="user-name">{post.user_name}</span>
-                  </Link>
-                  <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
+        {posts.map((post) => {
+          // STEP 1: URLを抽出
+          const firstUrl = extractFirstUrl(post.content);
+          
+          return (
+            // ★ 投稿全体をクリックすると詳細ページに遷移するラッパー
+            <div key={post.post_id} className="post-item-wrapper" onClick={() => navigate(`/status/${post.post_id}`)}>
+              
+              {/* 通常のリツイートの場合に「〇〇さんがリツイートしました」ヘッダーを表示 */}
+              {post.original_post && !post.content && (
+                <div className="retweet-header">
+                  <FaRetweet />
+                  <span>{post.user_name}さんがリツイートしました</span>
                 </div>
-                
-                {/* 引用リツイートの場合、自分のコメントを表示 */}
-                {post.original_post && post.content && (
-                  <p className="post-content">{post.content}</p>
-                )}
-                
-                {/* 通常投稿の場合、本文と画像を表示 */}
-                {!post.original_post && (
-                  <>
-                    {renderContentWithLinks(post.content)}
-                    {post.media_type === 'image' && post.image_url && (
-                      <img src={post.image_url} alt="投稿画像" className="post-image"/>
-                    )}
-                    {post.media_type === 'video' && post.video_url && (
-                      <video src={post.video_url} controls className="post-video"></video>
-                    )}
-                  </>
-                )}
+              )}
 
-                {/* リツイートまたは引用リツイートの場合、引用元の投稿を表示 */}
-                {post.original_post && (
-                  <OriginalPost post={post.original_post} />
-                )}
+              <div className="post-item">
+                <div className="post-avatar">
+                  <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()}>
+                    <img 
+                      src={post.user_profile_image_url || '/default-avatar.png'} 
+                      alt={`${post.user_name}のアバター`} 
+                    />
+                  </Link>
+                </div>
+                <div className="post-body">
+                  <div className="post-header">
+                    <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{textDecoration: 'none', color: 'inherit'}}>
+                      <span className="user-name">{post.user_name}</span>
+                    </Link>
+                    <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
+                  </div>
+                  
+                  {/* 引用リツイートの場合、自分のコメントを表示 */}
+                  {post.original_post && post.content && (
+                    <p className="post-content">{post.content}</p>
+                  )}
+                  
+                  {/* 通常投稿の場合、本文と画像を表示 */}
+                  {!post.original_post && (
+                    <>
+                      {renderContentWithLinks(post.content)}
+                      {post.media_type === 'image' && post.image_url && (
+                        <img src={post.image_url} alt="投稿画像" className="post-image"/>
+                      )}
+                      {post.media_type === 'video' && post.video_url && (
+                        <video src={post.video_url} controls className="post-video"></video>
+                      )}
+                      
+                      {/* STEP 2: OGPPreviewコンポーネントを呼び出し */}
+                      {firstUrl && !post.image_url && !post.video_url && (
+                        <OGPPreview url={firstUrl} />
+                      )}
+                    </>
+                  )}
+
+                  {/* リツイートまたは引用リツイートの場合、引用元の投稿を表示 */}
+                  {post.original_post && (
+                    <OriginalPost post={post.original_post} />
+                  )}
 
                 <div className="post-actions">
                   <button onClick={(e) => { e.stopPropagation(); handleReplyButtonClick(post.post_id); }}>
@@ -402,7 +420,8 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       
       {/* 引用リツイート用モーダル */}
