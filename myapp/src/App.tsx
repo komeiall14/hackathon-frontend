@@ -560,7 +560,7 @@ function App() {
               <h3>All Registered Users</h3>
               <div className="user-list">
                 {users.length === 0 ? <p>No users found.</p> : (
-                  <ul>{users.map((user) => (
+                  <ul>{users.filter(user => !user.firebase_uid?.startsWith('bot_')).map((user) => (
                       <li key={user.id}>
                         Name: {user.name} | Age: {user.age || 'N/A'} | Firebase UID: {user.firebase_uid || 'N/A'}
                       </li>
