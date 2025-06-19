@@ -21,11 +21,13 @@ body {
 /* 左サイドバー */
 .left-sidebar {
   width: 25%;
-  padding: 20px;
-  border-right: 1px solid #38444d;
   height: 100vh;
   position: sticky;
   top: 0;
+  border-right: 1px solid #38444d;
+  padding: 20px;
+  box-sizing: border-box; /* paddingを含めてサイズ計算するようにする */
+  overflow-y: auto; /* ★ 万が一コンテンツが溢れた場合にのみスクロールバーを表示 */
 }
 
 /* 中央のメインコンテンツ（タイムライン） */
@@ -619,4 +621,134 @@ h1, h2 {
   background-color: rgba(21, 32, 43, 0.85); 
   /* 背景をぼかす「すりガラス」効果 */
   backdrop-filter: blur(4px); 
+}
+
+/* src/App.css の末尾に追加 */
+
+.bot-topic-input-container {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.bot-topic-input-container label {
+  font-size: 14px;
+  color: #8899a6;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.bot-topic-input-container input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid #38444d;
+  background-color: #203444;
+  color: white;
+  font-size: 15px;
+}
+
+/* src/App.css の末尾に追加 */
+
+.top-right-auth {
+  position: fixed; /* 画面に固定 */
+  top: 10px;
+  right: 20px;
+  z-index: 1001; /* 他の要素より手前に表示 */
+}
+
+/* 右上に移動したボタンコンテナのスタイルを調整 */
+.top-right-auth .auth-button-container {
+  flex-direction: row; /* ボタンを横に並べる */
+  align-items: center;
+  gap: 12px;
+  margin: 0; /* 上下のマージンをリセット */
+}
+
+/* 右上に移動したボタン自体のスタイルを調整 */
+.top-right-auth .pill-button {
+  width: auto; /* ボタンの幅をコンテンツに合わせる */
+  padding: 8px 16px; /* 少し小さくする */
+}
+
+/* src/App.css の末尾に追加 */
+
+/* ログイン時、ユーザー情報とメニュー全体を囲むコンテナ */
+.user-info-menu-container {
+  position: relative; /* ドロップダウンメニューの基準点にする */
+}
+
+/* ユーザーアイコンと名前を表示する領域 */
+.user-info-container {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.user-info-container:hover {
+  background-color: rgba(231, 233, 234, 0.1);
+}
+
+/* ユーザーアイコンの画像 */
+.user-info-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+/* ユーザー名 */
+.user-info-name {
+  font-weight: bold;
+  font-size: 15px;
+}
+
+/* ログアウトメニューのスタイル */
+.logout-menu {
+  position: absolute;
+  top: 110%; /* ユーザー情報コンテナのすぐ下に表示 */
+  right: 0;
+  background-color: #15202B;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+  border: 1px solid #38444d;
+  width: 200px;
+  overflow: hidden;
+  z-index: 1002;
+}
+
+/* ログアウトメニューの項目 */
+.logout-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #e0245e; /* 赤系の色で危険な操作であることを示す */
+  font-size: 15px;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+}
+.logout-menu-item:hover {
+  background-color: rgba(224, 36, 94, 0.1);
+}
+
+/* App.css の末尾に追加 */
+
+/* bad-button のスタイル */
+.post-actions .bad-button {
+  transition: color 0.2s;
+}
+/* ホバー時の色（青みがかったグレーなど） */
+.post-actions .bad-button:hover {
+  color: #7b8b9a;
+}
+/* 既に押されている時の色 */
+.post-actions .bad-button.badded {
+  color: #7b8b9a;
 }

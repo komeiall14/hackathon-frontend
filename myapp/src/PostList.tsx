@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; // useEffect をインポート
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
-import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, FaEye, FaRegBookmark, FaBookmark } from 'react-icons/fa';
+import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, FaEye, FaRegBookmark, FaBookmark, FaThumbsDown, FaRegThumbsDown } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom'; 
 import { QuoteRetweetModal } from './QuoteRetweetModal';
 import { OriginalPost } from './OriginalPost';
@@ -23,6 +23,8 @@ export interface Post {
   retweet_count: number;         // ★ この行を追加
   is_retweeted_by_me: boolean;  // ★ この行を追加
   is_bookmarked_by_me: boolean; 
+  bad_count: number;         // ★ 追加
+  is_badded_by_me: boolean; 
   original_post?: Post;
 }
 
@@ -59,6 +61,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   const [quotingPost, setQuotingPost] = useState<Post | null>(null);
   const [showRetweetMenu, setShowRetweetMenu] = useState<string | null>(null);
   const [likingInProgress, setLikingInProgress] = useState<Set<string>>(new Set());
+  const [baddingInProgress, setBaddingInProgress] = useState<Set<string>>(new Set()); // ★ 追加
   
 
   // ★ 変更点3: handleLike関数を「Optimistic Update」方式に書き換える
@@ -102,7 +105,43 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
     }
   };
   
+// PostList.tsx 内の handleBad 関数を以下に置き換えてください
 
+  const handleBad = async (postToUpdate: Post) => {
+    if (!loginUser) { toast.error('ログインしてください。'); return; }
+    if (baddingInProgress.has(postToUpdate.post_id)) return;
+
+    const isBadded = postToUpdate.is_badded_by_me;
+
+    const optimisticallyUpdatedPost = {
+      ...postToUpdate,
+      is_badded_by_me: !isBadded,
+      bad_count: isBadded ? postToUpdate.bad_count - 1 : postToUpdate.bad_count + 1,
+    };
+    onUpdateSinglePost(optimisticallyUpdatedPost);
+
+    setBaddingInProgress(prev => new Set(prev).add(postToUpdate.post_id));
+
+    const token = await loginUser.getIdToken();
+    const method = isBadded ? 'DELETE' : 'POST';
+    try {
+      // ★★★ この行のURLをバッククォート(`)で正しく囲む ★★★
+      const response = await fetch(`${BACKEND_API_URL}/api/posts/bad/${postToUpdate.post_id}`, {
+        method: method,
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) { throw new Error('操作に失敗しました。'); }
+    } catch (err: any) {
+      toast.error(err.message);
+      onUpdateSinglePost(postToUpdate);
+    } finally {
+      setBaddingInProgress(prev => {
+        const next = new Set(prev);
+        next.delete(postToUpdate.post_id);
+        return next;
+      });
+    }
+  };
   const handleBookmark = async (postToUpdate: Post) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
 
@@ -386,6 +425,14 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                     disabled={likingInProgress.has(post.post_id)}
                   >
                     {post.is_liked_by_me ? <FaHeart /> : <FaRegHeart />} <span>{post.like_count}</span>
+                  </button>
+
+                  <button
+                    className={`bad-button ${post.is_badded_by_me ? 'badded' : ''}`}
+                    onClick={(e) => { e.stopPropagation(); handleBad(post); }}
+                    disabled={baddingInProgress.has(post.post_id)}
+                  >
+                    {post.is_badded_by_me ? <FaThumbsDown /> : <FaRegThumbsDown />} <span>{post.bad_count}</span>
                   </button>
 
                   <button

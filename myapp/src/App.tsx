@@ -42,6 +42,7 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showUserManagement, setShowUserManagement] = useState<boolean>(false);
+  const [botTopic, setBotTopic] = useState<string>(''); 
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
@@ -70,16 +71,20 @@ function App() {
   const [isCreatingBot, setIsCreatingBot] = useState(false); // Bot生成中の状態を管理
 
   // handleCreateBotAndPost関数を以下のように修正
-  const handleCreateBotAndPost = async (shouldReload: boolean) => { // 引数 shouldReload を追加
+  const handleCreateBotAndPost = async (shouldReload: boolean) => {
     setIsCreatingBot(true);
-    // 継続モードの場合はloadingトーストは不要なので、単発の場合のみ表示
     if (shouldReload) {
       toast.loading('AIボットを生成しています...');
     }
 
     try {
+      // ★★★ fetchの引数を修正 ★★★
       const response = await fetch(`${BACKEND_API_URL}/api/bot/create-and-post`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // ★ ヘッダーを追加
+        },
+        body: JSON.stringify({ topic: botTopic }), // ★ トピックをJSON形式で送信
       });
 
       if (!response.ok) {
@@ -89,13 +94,11 @@ function App() {
       toast.dismiss();
       toast.success('新しいAIボットが投稿しました！');
       
-      // 引数がtrueの場合のみページをリロードする
       if (shouldReload) {
         setTimeout(() => {
           window.location.reload();
         }, 1500);
       } else {
-        // 継続モードの場合はタイムラインを再取得して静かに更新
         triggerRefresh();
       }
 
@@ -378,26 +381,29 @@ function App() {
     <>
       <div className="app-container">
         <Toaster position="top-center" />
+        <div className="top-right-auth">
+          <LoginForm 
+            loginUser={loginUser} 
+            onLoginSuccess={() => {
+              fetchAllUsers();
+              triggerRefresh();
+            }} 
+          />
+        </div>
+        
         
         <aside className="left-sidebar">
+          {/* ★ 前回の修正で追加した sidebar-nav-section と sidebar-action-section の囲いを削除し、シンプルな構造に戻します */}
           <h2>ナビゲーション</h2>
 
-          {/* ▼▼▼ このLinkコンポーネントを修正 ▼▼▼ */}
           <Link 
             to="/" 
             className="nav-link" 
             onClick={() => {
-              // もし既にホーム('/')にいる場合
               if (location.pathname === '/') {
-                // ページの一番上にスムーズにスクロール
-                window.scrollTo({
-                  top: 0,
-                  behavior: 'smooth'
-                });
-                // さらに、最新の投稿を取得するためにデータを再読み込み
-                void fetchPosts(true, loginUser);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                triggerRefresh();
               }
-              // 他のページにいる場合は、Linkのデフォルトの挙動（ホームへの画面遷移）に任せる
             }}
           >
             <FaHome />
@@ -436,14 +442,19 @@ function App() {
               <span style={{ marginLeft: '16px' }}>スペース</span>
           </Link>
 
-          <LoginForm 
-            onLoginSuccess={() => {
-              fetchAllUsers();
-              void fetchPosts(true, fireAuth.currentUser); 
-            }} 
-          />
+          {/* ★★★ LoginFormはここから上記(.top-right-auth)へ移動しました ★★★ */}
           
-          {/* ▼▼▼ 変更点1: 既存ボタンのonClickを修正 ▼▼▼ */}
+          <div className="bot-topic-input-container">
+            <label htmlFor="botTopic">AIボットの投稿トピック (任意)</label>
+            <input
+                type="text"
+                id="botTopic"
+                value={botTopic}
+                onChange={(e) => setBotTopic(e.target.value)}
+                placeholder="例: サッカー, アイドル"
+            />
+          </div>
+          
           <button 
               className="sidebar-button"
               onClick={() => handleCreateBotAndPost(true)}
@@ -455,26 +466,24 @@ function App() {
             </div>
           </button>
 
-          {/* ▼▼▼ 変更点2: 新しい継続モード用のボタンを追加 ▼▼▼ */}
           <button
             className="sidebar-button"
             onClick={toggleContinuousBotMode}
             style={{ 
-              backgroundColor: isContinuousBotMode ? '#e0245e' : '#1DA1F2', // ON/OFFで色を変更
+              backgroundColor: isContinuousBotMode ? '#e0245e' : '#1DA1F2',
               marginTop: '10px'
             }}
           >
             {isContinuousBotMode ? 'AIボット継続投稿 停止' : 'AIボット継続投稿 開始'}
           </button>
           
-          {/* ▼▼▼ 変更点3: レイアウト調整 ▼▼▼ */}
           <button 
               className="sidebar-button" 
               onClick={() => {
                   fetchAllUsers();
                   setShowUserManagement(true);
               }}
-              style={{ marginTop: '10px' }} // 上のボタンとの間隔を追加
+              style={{ marginTop: '10px' }}
           >
               ユーザー管理
           </button>
