@@ -7,6 +7,7 @@ import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Routes, Route } from 'react-router-dom'; // Routes, Routeをインポート
+import { SpacePage } from './SpacePage';
 
 // これまでApp.tsxにあったコンポーネントをインポート
 import { PostList } from './PostList'; // 仮のHomeコンポーネントとして
@@ -34,6 +35,9 @@ root.render(
         <Route path="/" element={<App />}>
           {/* URLが "/" の場合にOutletに表示される内容 */}
           <Route index element={<Home />} /> 
+
+          <Route path="space" element={<SpacePage />} />
+
           
           {/* URLが "/messages" や "/messages/..." の場合にOutletに表示される内容 */}
           <Route path="messages" element={<MessagesPage />}>

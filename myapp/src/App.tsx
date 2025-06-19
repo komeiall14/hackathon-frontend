@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { Routes, Route, Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
-import { FaHome, FaUser, FaEnvelope, FaBell, FaBookmark, FaRobot } from 'react-icons/fa';
+import { FaHome, FaUser, FaEnvelope, FaBell, FaBookmark, FaRobot, FaUsers } from 'react-icons/fa';
 import { PostDetailPage } from './PostDetailPage'; 
 import { QuoteRetweetsPage } from './QuoteRetweetsPage'; 
 import { useInView } from 'react-intersection-observer'; 
@@ -47,6 +47,7 @@ function App() {
   const location = useLocation();
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true); // さらに読み込む投稿があるか
+  const [feedType, setFeedType] = useState<'forYou' | 'following'>('forYou'); 
   const [isContinuousBotMode, setIsContinuousBotMode] = useState(false); // 継続モードのON/OFF状態
   const intervalRef = useRef<NodeJS.Timeout | null>(null); // タイマーのIDを保持
   const [refreshKey, setRefreshKey] = useState(0);
@@ -134,10 +135,9 @@ function App() {
   };
   // ▲▲▲【ここまで追加】▲▲▲
   // ▼▼▼ 変更点2: useCallbackの依存配列を修正 ▼▼▼
-  const fetchPosts = useCallback(async (isInitialLoad: boolean, currentUser: FirebaseUser | null) => {
-    // 呼び出し元のuseEffectでisLoadingをチェックするため、ここでのチェックは不要
-    // if (isLoading && !isInitialLoad) return;
+// App.tsx
 
+  const fetchPosts = useCallback(async (isInitialLoad: boolean, currentUser: FirebaseUser | null) => {
     setIsLoading(true);
     
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -148,10 +148,16 @@ function App() {
       } catch (error) { console.error("IDトークンの取得に失敗:", error); }
     }
 
+    // ★ feedTypeに応じてAPIエンドポイントを動的に変更
+    const endpoint = feedType === 'forYou' 
+      ? `${BACKEND_API_URL}/posts` 
+      : `${BACKEND_API_URL}/api/posts/following`;
+
     const currentOffset = isInitialLoad ? 0 : offset;
 
     try {
-      const response = await fetch(`${BACKEND_API_URL}/posts?limit=${PAGE_SIZE}&offset=${currentOffset}`, { headers });
+      // ★ 決定したエンドポイントにリクエスト
+      const response = await fetch(`${endpoint}?limit=${PAGE_SIZE}&offset=${currentOffset}`, { headers });
       if (!response.ok) throw new Error('データの取得に失敗しました。');
       
       const data: Post[] = await response.json();
@@ -170,13 +176,25 @@ function App() {
 
     } catch (err: any) {
       setError(err.message);
-      // toast.errorはuseEffect側でハンドリングした方が良い場合もある
     } finally {
       setIsLoading(false);
     }
-  // ▼▼▼ 依存配列から `isLoading` を削除する ▼▼▼
-  }, [BACKEND_API_URL, offset, setPosts, setHasMore, setOffset, setIsLoading, setError]);
-  
+  // ★ 依存配列に feedType を追加
+  }, [BACKEND_API_URL, offset, loginUser, feedType]);
+
+    // ★ タイムラインの種類が変更された時に投稿をリフレッシュする
+  useEffect(() => {
+    // ログイン状態が確定してから実行
+    if (loginUser === undefined) return; 
+
+    // 投稿リストをリセット
+    setPosts([]);
+    setOffset(0);
+    setHasMore(true);
+    // 新しいタイムラインのデータを最初から取得
+    fetchPosts(true, loginUser);
+  }, [feedType, loginUser]); // ★ feedTypeまたはloginUserの変更を監視
+    
   const fetchAllUsers = useCallback(async () => {
     setMessage('Loading users...');
     try {
@@ -413,6 +431,11 @@ function App() {
               <span style={{ marginLeft: '16px' }}>ブックマーク</span>
           </Link>
 
+          <Link to="/space" className="nav-link">
+              <FaUsers />
+              <span style={{ marginLeft: '16px' }}>スペース</span>
+          </Link>
+
           <LoginForm 
             onLoginSuccess={() => {
               fetchAllUsers();
@@ -476,7 +499,9 @@ function App() {
                 setOffset(0);
                 setHasMore(true);
                 fetchPosts(true, loginUser);
-              }
+              },
+              feedType,
+              setFeedType,
             }} />
         </main>
         

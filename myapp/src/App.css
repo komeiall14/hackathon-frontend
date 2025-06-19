@@ -608,3 +608,15 @@ h1, h2 {
   margin-top: 12px;
   background-color: #000; /* 動画が読み込まれるまでの背景色を黒に指定 */
 }
+
+/* src/App.css の末尾などに追加してください */
+
+.home-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  /* 背景を半透明にして、下のコンテンツが透けるのを防ぎます */
+  background-color: rgba(21, 32, 43, 0.85); 
+  /* 背景をぼかす「すりガラス」効果 */
+  backdrop-filter: blur(4px); 
+}
