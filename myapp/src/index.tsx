@@ -1,16 +1,13 @@
-// src/index.tsx をこの内容に更新
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
-import { BrowserRouter, Routes, Route } from 'react-router-dom'; // Routes, Routeをインポート
+import { BrowserRouter, Routes, Route } from 'react-router-dom'; 
 import { SpacePage } from './SpacePage';
 
-// これまでApp.tsxにあったコンポーネントをインポート
-import { PostList } from './PostList'; // 仮のHomeコンポーネントとして
+import { PostList } from './PostList'; 
 import { UserProfile } from './UserProfile';
 import { SearchResults } from './SearchResults';
 import { PostDetailPage } from './PostDetailPage';
@@ -18,8 +15,8 @@ import { QuoteRetweetsPage } from './QuoteRetweetsPage';
 import { FollowingPage } from './FollowingPage';
 import { FollowersPage } from './FollowersPage';
 import { MessagesPage } from './MessagesPage';
-import { ChatWindow } from './ChatWindow'; // ChatWindowもインポート
-import { Home } from './Home'; // Homeコンポーネントもインポート
+import { ChatWindow } from './ChatWindow'; 
+import { Home } from './Home'; 
 import { NotificationsPage } from './NotificationsPage';
 import { BookmarksPage } from './BookmarksPage';
 
@@ -29,7 +26,6 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      {/* ▼▼▼ ここを修正 ▼▼▼ */}
       <Routes>
         {/* Appコンポーネントをレイアウトルートとして設定 */}
         <Route path="/" element={<App />}>
@@ -56,7 +52,6 @@ root.render(
           <Route path="status/:postId/quotes" element={<QuoteRetweetsPage />} />
         </Route>
       </Routes>
-      {/* ▲▲▲ ここまで修正 ▲▲▲ */}
     </BrowserRouter>
   </React.StrictMode>
 );

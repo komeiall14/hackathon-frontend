@@ -1,12 +1,10 @@
-/* NewConversationModal.css (新規作成) */
-
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: rgba(91, 112, 131, 0.4);
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* 上から表示 */
+    align-items: flex-start; 
     padding-top: 10vh;
     z-index: 1000;
   }

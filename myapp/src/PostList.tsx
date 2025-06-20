@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // useEffect をインポート
+import React, { useState, useEffect } from 'react'; 
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
 import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, FaEye, FaRegBookmark, FaBookmark, FaThumbsDown, FaRegThumbsDown } from 'react-icons/fa';
@@ -15,16 +15,16 @@ export interface Post {
   user_profile_image_url: string | null;
   content: string | null;
   image_url: string | null;
-  video_url: string | null;   // ★ 追加
-  media_type: 'image' | 'video' | null; // ★ 追加
+  video_url: string | null;   
+  media_type: 'image' | 'video' | null; 
   created_at: string;
   like_count: number;
   is_liked_by_me: boolean;
   reply_count: number;
-  retweet_count: number;         // ★ この行を追加
-  is_retweeted_by_me: boolean;  // ★ この行を追加
+  retweet_count: number;         
+  is_retweeted_by_me: boolean;  
   is_bookmarked_by_me: boolean; 
-  bad_count: number;         // ★ 追加
+  bad_count: number;        
   is_badded_by_me: boolean; 
   original_post?: Post;
 }
@@ -33,11 +33,11 @@ interface PostListProps {
   posts: Post[];
   isLoading: boolean;
   error: string | null;
-  onUpdate: () => void; // onUpdateは他の機能(投稿、削除など)で依然として必要です
+  onUpdate: () => void; 
   loginUser: FirebaseUser | null;
-  title?: string; // ★★★ 1. titleプロパティを追加（オプショナル）
+  title?: string; 
   onPostCreated?: (newPost: Post) => void; 
-  onUpdateSinglePost: (updatedPost: Post) => void; // ★★★ 新しいプロパティ
+  onUpdateSinglePost: (updatedPost: Post) => void; 
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
@@ -61,7 +61,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   const [quotingPost, setQuotingPost] = useState<Post | null>(null);
   const [showRetweetMenu, setShowRetweetMenu] = useState<string | null>(null);
   const [likingInProgress, setLikingInProgress] = useState<Set<string>>(new Set());
-  const [baddingInProgress, setBaddingInProgress] = useState<Set<string>>(new Set()); // ★ 追加
+  const [baddingInProgress, setBaddingInProgress] = useState<Set<string>>(new Set()); 
   
 
   
@@ -93,7 +93,6 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
       toast.error(err.message);
       onUpdateSinglePost(postToUpdate);
     } finally {
-      // ▼▼▼ このブロックを丸ごと追加 ▼▼▼
       // 処理が成功しても失敗しても、最後に必ず実行される
       // 処理中の投稿IDをセットから削除し、ボタンの無効化を解除する
       setLikingInProgress(prev => {
@@ -101,11 +100,9 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
         next.delete(postToUpdate.post_id);
         return next;
       });
-      // ▲▲▲ ここまで追加 ▲▲▲
     }
   };
   
-// PostList.tsx 内の handleBad 関数を以下に置き換えてください
 
   const handleBad = async (postToUpdate: Post) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
@@ -125,7 +122,6 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
     const token = await loginUser.getIdToken();
     const method = isBadded ? 'DELETE' : 'POST';
     try {
-      // ★★★ この行のURLをバッククォート(`)で正しく囲む ★★★
       const response = await fetch(`${BACKEND_API_URL}/api/posts/bad/${postToUpdate.post_id}`, {
         method: method,
         headers: { 'Authorization': `Bearer ${token}` },
@@ -200,7 +196,6 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
       setReplyContent('');
       toast.success('リプライを投稿しました！');
       
-      // ▼▼▼ ここからが新しいロジックです ▼▼▼
       // もし返信相手がボットの場合
       if (isReplyingToBot) {
           // ユーザーに、AIが返信を準備中であることを伝える
@@ -216,7 +211,6 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
           // 返信相手が人間の場合、即座にタイムラインを更新してリプライ数の変化などを反映
           onUpdate();
       }
-      // ▲▲▲ 新しいロジックはここまでです ▲▲▲
 
     } catch (err: any) { 
         toast.error(err.message); 
@@ -226,12 +220,10 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   const handleGenerateReply = async (originalPostContent: string | null) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
     
-    // ▼▼▼ contentがnullまたは空文字列の場合のチェックを追加 ▼▼▼
     if (!originalPostContent) {
       toast.error("元の投稿に内容がないため、返信を生成できません。");
       return;
     }
-    // ▲▲▲ ここまで追加 ▲▲▲
 
     const token = await loginUser.getIdToken();
     setIsGenerating(true);
@@ -268,9 +260,6 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
     } catch (err: any) { toast.error(`エラー: ${err.message}`); }
   };
 
-// PostList.tsx
-
-// PostList.tsx
 
 const handleRetweet = async (post: Post) => {
   if (!loginUser) { toast.error('ログインしてください。'); return; }
@@ -434,7 +423,6 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                             <FaQuoteLeft />
                             <span style={{ marginLeft: '8px' }}>引用リツイート</span>
                           </button>
-                          {/* 「引用リツイートを見る」機能は、今後の実装のためにコメントアウトしておきます */}
                           <button 
                             className="retweet-menu-item" 
                             onClick={(e) => {

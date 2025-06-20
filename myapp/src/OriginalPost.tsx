@@ -1,11 +1,7 @@
-// src/OriginalPost.tsx
-
 import React from 'react';
 import { Post } from './PostList';
 import { Link, useNavigate } from 'react-router-dom';
-// ▼▼▼ 修正箇所 ▼▼▼
 import { InitialAvatar } from './InitialAvatar';
-// ▲▲▲ 修正ここまで ▲▲▲
 
 interface OriginalPostProps {
   post: Post;
@@ -31,7 +27,6 @@ export const OriginalPost: React.FC<OriginalPostProps> = ({ post }) => {
     <div className="original-post-container" onClick={handleNavigate}>
       <div className="post-header">
         <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-          {/* ▼▼▼ 修正箇所 ▼▼▼ */}
           <div style={{ marginRight: '8px' }}>
             {post.user_profile_image_url && post.user_profile_image_url.startsWith('http') ? (
               <img 
@@ -43,7 +38,6 @@ export const OriginalPost: React.FC<OriginalPostProps> = ({ post }) => {
               <InitialAvatar name={post.user_name} size={24} />
             )}
           </div>
-          {/* ▲▲▲ 修正ここまで ▲▲▲ */}
           <span className="user-name" style={{fontSize: '15px'}}>{post.user_name}</span>
           <span className="timestamp" style={{fontSize: '15px'}}> - {formattedDate()}</span>
         </Link>

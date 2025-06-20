@@ -1,6 +1,4 @@
-// src/BookmarksPage.tsx （新規作成）
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // useCallback をインポート
 import { useOutletContext } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';
 import { Post, PostList } from './PostList';
@@ -18,36 +16,42 @@ export const BookmarksPage: React.FC = () => {
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchBookmarks = useCallback(async () => {
     if (!loginUser) {
         setIsLoading(false);
         return;
     };
-
-    const fetchBookmarks = async () => {
-      setIsLoading(true);
-      try {
-        const token = await loginUser.getIdToken();
-        const response = await fetch(`${BACKEND_API_URL}/api/bookmarks`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (!response.ok) throw new Error('ブックマークの取得に失敗しました。');
-        const data = await response.json();
-        setBookmarkedPosts(data || []);
-      } catch (err: any) {
-        toast.error(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
+    setIsLoading(true);
+    try {
+      const token = await loginUser.getIdToken();
+      const response = await fetch(`${BACKEND_API_URL}/api/bookmarks`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('ブックマークの取得に失敗しました。');
+      const data = await response.json();
+      setBookmarkedPosts(data || []);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loginUser]); // 依存配列にloginUserを設定
+  
+  useEffect(() => {
     fetchBookmarks();
-  }, [loginUser]);
+  }, [fetchBookmarks]); // useEffectからはこの関数を呼び出す
 
   const handleUpdateSinglePost = (updatedPost: Post) => {
-    setBookmarkedPosts(currentPosts => 
-      currentPosts.map(p => p.post_id === updatedPost.post_id ? updatedPost : p)
-    );
+    // ブックマークが外された場合、リストからその投稿を削除する
+    if (!updatedPost.is_bookmarked_by_me) {
+      setBookmarkedPosts(currentPosts => 
+        currentPosts.filter(p => p.post_id !== updatedPost.post_id)
+      );
+    } else { // それ以外の更新（いいね数など）
+      setBookmarkedPosts(currentPosts => 
+        currentPosts.map(p => p.post_id === updatedPost.post_id ? updatedPost : p)
+      );
+    }
   };
   
   return (
@@ -57,7 +61,7 @@ export const BookmarksPage: React.FC = () => {
         posts={bookmarkedPosts}
         isLoading={isLoading}
         error={null}
-        onUpdate={() => { /* 必要なら再取得ロジックを実装 */ }}
+        onUpdate={fetchBookmarks} 
         loginUser={loginUser}
         onUpdateSinglePost={handleUpdateSinglePost}
       />

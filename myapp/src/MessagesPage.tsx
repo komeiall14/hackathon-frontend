@@ -1,12 +1,10 @@
-// MessagesPage.tsx をこの内容で更新
-
-import React, { useState } from 'react'; // useStateを追加
+import React, { useState } from 'react'; 
 import { Outlet, useOutletContext } from 'react-router-dom';
 import { User as FirebaseUser } from "firebase/auth";
 import { ConversationList } from './ConversationList';
 import './Messages.css';
-import { NewConversationModal } from './NewConversationModal'; // ★ インポートを追加
-import { FaEnvelopeOpenText } from "react-icons/fa"; // ★ アイコンをインポート
+import { NewConversationModal } from './NewConversationModal'; 
+import { FaEnvelopeOpenText } from "react-icons/fa"; 
 import { PageHeader } from './PageHeader'; 
 
 interface AppContextType {
@@ -46,7 +44,6 @@ export const MessagesPage: React.FC = () => {
         </div>
       </div>
       
-      {/* ★ ここを追加 */}
       {isModalOpen && loginUser && (
         <NewConversationModal 
           loginUser={loginUser} 

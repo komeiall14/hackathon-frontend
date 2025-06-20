@@ -1,12 +1,10 @@
-// src/PageHeader.tsx （新規作成）
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './PageHeader.css'; // 次に作成するCSS
+import './PageHeader.css'; 
 
 interface PageHeaderProps {
   title: string;
-  actionElement?: React.ReactNode; // ヘッダーの右側に表示する追加の要素（例: ボタン）
+  actionElement?: React.ReactNode; 
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, actionElement }) => {

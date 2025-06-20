@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PostList, Post } from './PostList'; // PostListとその型を再利用
+import { PostList, Post } from './PostList'; 
 import toast from 'react-hot-toast';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
 import { fireAuth } from './firebase'; 

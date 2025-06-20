@@ -40,7 +40,6 @@
     font-size: 15px;
   }
   
-  /* UserProfile.cssからボタンのスタイルを流用 */
   .follow-btn, .following-btn {
     padding: 6px 16px;
     border-radius: 20px;

@@ -1,5 +1,3 @@
-// src/ChatWindow.tsx （完成版）
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';

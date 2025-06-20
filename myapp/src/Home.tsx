@@ -51,7 +51,6 @@ export const Home: React.FC = () => {
   } = useOutletContext<HomeContextType>();
   console.log("Home component re-rendered. showExplanationButton is:", showExplanationButton);
 
-  // タブのスタイル定義（変更なし）
   const tabStyle = {
     width: '50%',
     padding: '16px 0',
@@ -101,7 +100,6 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-      {/* ▼▼▼ ここに「弁明する」ボタンを表示するUIブロックを追加 ▼▼▼ */}
       {experienceMode === 'flame' && experienceTargetPost && showExplanationButton && (
         <div style={{
           position: 'sticky',
@@ -133,7 +131,6 @@ export const Home: React.FC = () => {
           </button>
         </div>
       )}
-      {/* ▲▲▲ 追加ここまで ▲▲▲ */}
 
       <PostList 
         posts={posts} 

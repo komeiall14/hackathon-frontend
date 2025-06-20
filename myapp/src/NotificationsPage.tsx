@@ -1,5 +1,3 @@
-// src/NotificationsPage.tsx （新規作成）
-
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -7,7 +5,7 @@ import toast from 'react-hot-toast';
 import { UserProfileData } from './UserProfile';
 import { NotificationItem } from './NotificationItem';
 import './NotificationsPage.css';
-import { PageHeader } from './PageHeader'; // ★ インポートを追加
+import { PageHeader } from './PageHeader'; 
 
 // NotificationResponseの型定義
 export interface NotificationResponse {

@@ -1,13 +1,9 @@
-// src/QuoteRetweetModal.tsx
-
 import React, { useState } from 'react';
 import { Post } from './PostList';
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
 import './QuoteRetweetModal.css';
-// ▼▼▼ 修正箇所 ▼▼▼
 import { InitialAvatar } from './InitialAvatar';
-// ▲▲▲ 修正ここまで ▲▲▲
 
 interface QuoteRetweetModalProps {
   post: Post;
@@ -75,13 +71,11 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
           <form onSubmit={handleSubmit}>
             <div className="qt-form-body">
                 <div className="post-avatar">
-                  {/* ▼▼▼ 修正箇所(1/2) ▼▼▼ */}
                   {loginUser?.photoURL && loginUser.photoURL.startsWith('http') ? (
                     <img src={loginUser.photoURL} alt="your avatar" />
                   ) : (
                     <InitialAvatar name={loginUser?.displayName || ""} size={48} />
                   )}
-                  {/* ▲▲▲ 修正ここまで ▲▲▲ */}
                 </div>
                 <textarea
                     value={comment}
@@ -105,7 +99,6 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
                     <InitialAvatar name={post.user_name} size={20} />
                   )}
                 </div>
-                {/* ▲▲▲ 修正ここまで ▲▲▲ */}
                 <strong>{post.user_name}</strong>
                 <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
               </div>

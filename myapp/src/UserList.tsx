@@ -1,7 +1,7 @@
 import React from 'react';
 import { UserProfileData } from './UserProfile';
 import { UserListItem } from './UserListItem';
-import './UserList.css'; // 次のステップで作成するCSSファイル
+import './UserList.css'; 
 
 interface UserListProps {
   users: UserProfileData[];

@@ -11,7 +11,6 @@ import { InitialAvatar } from './InitialAvatar';
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-// main.goの構造体に合わせて修正
 export interface UserProfileData {
   id: string;
   name: string;
@@ -52,8 +51,6 @@ export const UserProfile: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
-
-  // ログインユーザーの情報をヘッダーに含めるように修正
   const fetchUserProfile = useCallback(async (currentUser: FirebaseUser | null) => {
     if (!userId) return;
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -89,7 +86,6 @@ export const UserProfile: React.FC = () => {
       toast.error(err.message);
     }
   }, [userId]);
-  // handleFollowToggle関数を追加
   const handleFollowToggle = async () => {
     if (!loginUser || !userProfile) { toast.error("ログインが必要です。"); return; }
     
@@ -155,8 +151,7 @@ export const UserProfile: React.FC = () => {
       toast.error(err.message);
     }
   };
-  
-  // ログイン状態が変化したらデータを再取得するように修正
+
   useEffect(() => {
     // 認証チェックが完了していなければ、データ取得を開始しない
     if (!authChecked) {
@@ -168,7 +163,7 @@ export const UserProfile: React.FC = () => {
       setIsLoading(false);
     };
     fetchData();
-  }, [authChecked, loginUser, fetchUserProfile, fetchUserPosts]); // authCheckedを依存配列に追加
+  }, [authChecked, loginUser, fetchUserProfile, fetchUserPosts]); 
 
 
   const handleProfileUpdate = () => {
@@ -188,7 +183,6 @@ export const UserProfile: React.FC = () => {
   
   return (
     <div className="profile-container">
-      {/* ▼▼▼ このヘッダーブロックを追加 ▼▼▼ */}
       <div style={{ padding: '10px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #38444d', position: 'sticky', top: 0, backgroundColor: 'rgba(21, 32, 43, 0.85)', backdropFilter: 'blur(4px)', zIndex: 10 }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', marginRight: '20px' }}>
           ←

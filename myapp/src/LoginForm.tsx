@@ -1,13 +1,10 @@
-// src/LoginForm.tsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from "firebase/auth";
 import { fireAuth } from "./firebase";
 import toast from 'react-hot-toast';
 import { FaSignOutAlt } from 'react-icons/fa';
-// ▼▼▼ 修正箇所 ▼▼▼
 import { InitialAvatar } from './InitialAvatar';
-// ▲▲▲ 修正ここまで ▲▲▲
+
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
@@ -84,7 +81,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ loginUser, onLoginSuccess 
                     <InitialAvatar name={loginUser.displayName || ""} size={32} />
                   )}
                 </div>
-                {/* ▲▲▲ 修正ここまで ▲▲▲ */}
                 <span className="user-info-name">{loginUser.displayName}</span>
             </div>
 

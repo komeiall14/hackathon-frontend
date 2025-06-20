@@ -20,8 +20,6 @@
     color: #8899a6;
   }
 
-  /* src/ChatWindow.css の末尾に追記 */
-
     .no-messages-info {
     margin: auto; /* 上下左右中央に配置 */
     text-align: center;

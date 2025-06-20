@@ -15,13 +15,13 @@ import { FaHome, FaUser, FaEnvelope, FaBell, FaBookmark, FaRobot, FaUsers } from
 import { PostDetailPage } from './PostDetailPage'; 
 import { QuoteRetweetsPage } from './QuoteRetweetsPage'; 
 import { useInView } from 'react-intersection-observer'; 
-import { FollowingPage } from './FollowingPage'; // ▼▼▼ 追加
-import { FollowersPage } from './FollowersPage'; // ▼▼▼ 追加
+import { FollowingPage } from './FollowingPage'; 
+import { FollowersPage } from './FollowersPage';
 import { MessagesPage } from './MessagesPage';
 import { Trends } from './Trends'; 
 import { RecommendedUsers } from './RecommendedUsers'; 
-import { ExplanationModal } from './ExplanationModal'; // 新しく作成したコンポーネント
-import { EvaluationResultModal } from './EvaluationResultModal'; // 新しく作成したコンポーネント
+import { ExplanationModal } from './ExplanationModal'; 
+import { EvaluationResultModal } from './EvaluationResultModal'; 
 import { InitialAvatar } from './InitialAvatar';
 import { UserProfileData } from './UserProfile'; 
 
@@ -107,7 +107,6 @@ function App() {
     console.log("showExplanationButton の現在の値:", showExplanationButton);
   }, [showExplanationButton]); // showExplanationButtonが変わるたびに実行
 
-  // handleCreateBotAndPost関数を以下のように修正
   const handleCreateBotAndPost = async (shouldReload: boolean) => {
     setIsCreatingBot(true);
     if (shouldReload) {
@@ -115,11 +114,10 @@ function App() {
     }
 
     try {
-      // ★★★ fetchの引数を修正 ★★★
       const response = await fetch(`${BACKEND_API_URL}/api/bot/create-and-post`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // ★ ヘッダーを追加
+          'Content-Type': 'application/json',  
         },
         body: JSON.stringify({ topic: botTopic }), // ★ トピックをJSON形式で送信
       });
@@ -129,7 +127,7 @@ function App() {
       }
 
       toast.dismiss();
-      toast.success('新しいAIボットが投稿しました！');
+      toast.success('新しいAIボットが投稿しました!');
       
       if (shouldReload) {
         setTimeout(() => {
@@ -146,8 +144,6 @@ function App() {
       setIsCreatingBot(false);
     }
   };
-
-  // handleCreateBotAndPost関数の下あたりに、以下の関数を丸ごと追加
 
   const toggleContinuousBotMode = () => {
     // もし現在、継続モードがONなら、停止処理を行う
@@ -249,7 +245,6 @@ function App() {
     }
   }, [BACKEND_API_URL]);
 
-  // ▼▼▼ このuseEffectを丸ごと追加 ▼▼▼
   useLayoutEffect(() => {
     // ページ遷移が完了した後に実行される
     
@@ -280,7 +275,6 @@ function App() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [location.pathname]);
-  // ▲▲▲ このuseEffectを丸ごと追加 ▲▲▲
 
   useEffect(() => {
     // ログインしていない場合は何もしない
@@ -323,7 +317,6 @@ function App() {
     }
   }, [location.pathname]);
 
-  // ★ 変更点2: ログイン状態が変化した際に、そのユーザー情報(user)をfetchPostsに渡すように修正
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(fireAuth, (user) => {
       setLoginUser(user);
@@ -385,7 +378,7 @@ function App() {
     const currentMode = experienceMode;
     setExperienceMode('none');
     setExperienceTargetPost(null);
-    setShowExplanationButton(false); // ★ この行を追加: 弁明ボタンを非表示にする
+    setShowExplanationButton(false); 
 
     if (currentMode === 'buzz') toast.success("バズり体験が終了しました。");
     if (currentMode === 'flame') toast.success("炎上が鎮火しました。");
@@ -410,7 +403,6 @@ function App() {
         }, 20000);
 
         // ボットアクションを開始
-        // ボットアクションを開始
         experienceIntervalRef.current = setInterval(async () => {
           const currentUser = fireAuth.currentUser;
           if (!currentUser) {
@@ -418,8 +410,7 @@ function App() {
               return;
           }
           try {
-              // ▼▼▼ このブロックを修正 ▼▼▼
-              const response = await fetch(`${BACKEND_API_URL}/api/bot/experience-action`, { // response を受け取る
+              const response = await fetch(`${BACKEND_API_URL}/api/bot/experience-action`, { 
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${await currentUser.getIdToken()}` },
                   body: JSON.stringify({ targetPostId: post.post_id, type: "positive" }),
@@ -430,11 +421,10 @@ function App() {
               if (result.action === "positive_reply" || result.action === "retweet" || result.action === "positive_quote") {
                   triggerRefresh();
               }
-              // ▲▲▲ 修正ここまで ▲▲▲
           } catch (err) {
               console.error("Bot action failed:", err);
           }
-      }, 1000); // 間隔は前回の修正値を反映
+      }, 1000); 
 
     }, 5000);
   };
@@ -458,8 +448,7 @@ function App() {
               return;
           }
           try {
-              // ▼▼▼ このブロックを修正 ▼▼▼
-              const response = await fetch(`${BACKEND_API_URL}/api/bot/experience-action`, { // response を受け取る
+              const response = await fetch(`${BACKEND_API_URL}/api/bot/experience-action`, { 
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${await currentUser.getIdToken()}` },
                   body: JSON.stringify({ targetPostId: post.post_id, type: "negative" }),
@@ -476,7 +465,6 @@ function App() {
         }, 1000);
     }, 5000);
 
-    // ★★★ このタイマーが抜けていました ★★★
     //8秒後に「弁明する」ボタンを表示させるタイマー
     setTimeout(() => {
         setShowExplanationButton(true);
@@ -484,7 +472,6 @@ function App() {
   };
 
   // 弁明をバックエンドに送って評価してもらう関数
-  // App.tsx の handleExplanationSubmit をこの内容に置き換えてください
 
   const handleExplanationSubmit = async (explanationText: string) => {
     if (!experienceTargetPost || !loginUser) return;
@@ -496,7 +483,6 @@ function App() {
     try {
       const token = await loginUser.getIdToken();
 
-      // 弁明の投稿処理（ここは変更なし）
       const postResponse = await fetch(`${BACKEND_API_URL}/post`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -509,7 +495,6 @@ function App() {
       const explanationPost = await postResponse.json();
       triggerRefresh();
 
-      // ▼▼▼ ここが修正箇所です ▼▼▼
       // 評価APIを呼び出す際のヘッダーを修正しました
       const evalResponse = await fetch(`${BACKEND_API_URL}/api/gemini/evaluate-explanation`, {
         method: 'POST',
@@ -525,7 +510,6 @@ function App() {
           explanationContent: explanationText
         })
       });
-      // ▲▲▲ 修正ここまで ▲▲▲
 
       if (!evalResponse.ok) {
           // 401エラーの場合は、より具体的なメッセージを出す
@@ -582,7 +566,6 @@ function App() {
         
         
         <aside className="left-sidebar">
-          {/* ★ 前回の修正で追加した sidebar-nav-section と sidebar-action-section の囲いを削除し、シンプルな構造に戻します */}
           <h2>ナビゲーション</h2>
 
           <Link 
@@ -641,7 +624,6 @@ function App() {
               <span style={{ marginLeft: '16px' }}>スペース</span>
           </Link>
 
-          {/* ★★★ LoginFormはここから上記(.top-right-auth)へ移動しました ★★★ */}
           
           <div className="bot-topic-input-container">
             <label htmlFor="botTopic">AIボットの投稿トピック (任意)</label>
@@ -696,7 +678,7 @@ function App() {
               error,
               hasMore,
               bottomRef: ref,
-              onPostCreation: handlePostCreation, // お客様のコードに合わせています
+              onPostCreation: handlePostCreation, 
               onUpdateSinglePost: handleUpdateSinglePost,
               onUpdate: () => {
                 setPosts([]);
@@ -710,7 +692,7 @@ function App() {
               // 体験モード用のprops
               experienceMode,
               experienceTargetPost,
-              showExplanationButton, // ★★★ この行が抜けていました ★★★
+              showExplanationButton, 
               openExplanationModal: (post: Post) => {
                 setExperienceTargetPost(post);
                 setIsExplanationModalOpen(true);
@@ -781,7 +763,6 @@ function App() {
               <div className="user-list">
                 {users.length === 0 ? <p>No users found.</p> : (
                   <div>
-                    {/* ▼▼▼ この部分が大きく変更されています ▼▼▼ */}
                     {users.filter(user => user.firebase_uid && !user.firebase_uid.startsWith('bot_')).map((user) => (
                       // 1. 各ユーザーがプロフィールページへの<Link>になる
                       <Link 

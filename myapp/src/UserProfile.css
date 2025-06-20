@@ -1,4 +1,3 @@
-/* UserProfile.css */
 .profile-container {
     width: 100%;
     max-width: 990px;
@@ -9,7 +8,6 @@
     position: relative;
     background-color: #15202b;
     border-bottom: 1px solid #38444d;
-    /* ★ 修正点1: プロフィール画像がはみ出す分、ヘッダー下の余白を確保します */
     margin-bottom: 80px; 
 }
 
@@ -22,7 +20,6 @@
 
 .profile-avatar-container {
     position: absolute;
-    /* ★ 修正点2: bottomプロパティでヘッダーの下にはみ出す位置を調整します */
     bottom: -90px; 
     left: 15px;
     width: 135px;
@@ -42,7 +39,6 @@
 .profile-info {
     padding: 15px;
     position: relative;
-    /* ★ 修正点3: 編集ボタンとの位置関係を調整するため、高さを確保します */
     padding-top: 25px; 
 }
 
@@ -92,8 +88,6 @@
     text-align: center;
 }
 
-/* UserProfile.css に追記 */
-
 .follow-btn, .following-btn {
     padding: 8px 16px;
     border-radius: 20px;
@@ -121,8 +115,6 @@
     color: #f4212e;
     border-color: rgba(239, 68, 68, 0.5);
 }
-
-/* src/UserProfile.css の末尾に追記 */
 
 .dm-btn {
     padding: 8px; /* アイコンなので左右のpaddingは不要 */

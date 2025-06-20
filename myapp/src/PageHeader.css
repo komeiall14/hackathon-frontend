@@ -1,36 +1,34 @@
-/* src/PageHeader.css （新規作成） */
-
 .page-header-container {
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between; /* 要素を左右に配置 */
-    border-bottom: 1px solid #38444d;
-    position: sticky;
-    top: 0;
-    background-color: rgba(21, 32, 43, 0.85); /* 半透明の背景 */
-    backdrop-filter: blur(4px); /* 背景をぼかす（すりガラス効果） */
-    z-index: 10;
-  }
-  
-  .page-header-left {
-    display: flex;
-    align-items: center;
-  }
-  
-  .back-button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    margin-right: 20px;
-    padding: 5px;
-  }
-  
-  .page-header-title {
-    margin: 0;
-    padding: 0;
-    border: none;
-    font-size: 18px;
-  }
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 要素を左右に配置 */
+  border-bottom: 1px solid #38444d;
+  position: sticky;
+  top: 0;
+  background-color: rgba(21, 32, 43, 0.85); /* 半透明の背景 */
+  backdrop-filter: blur(4px); /* 背景をぼかす（すりガラス効果） */
+  z-index: 10;
+}
+
+.page-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 20px;
+  padding: 5px;
+}
+
+.page-header-title {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: 18px;
+}

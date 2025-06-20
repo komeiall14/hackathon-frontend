@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { InitialAvatar } from './InitialAvatar';
-import { PageHeader } from './PageHeader';
+import { InitialAvatar } from '../InitialAvatar';
+import { PageHeader } from '../PageHeader';
 import { MemoryRouter } from 'react-router-dom';
 
 describe('Core UI Components', () => {

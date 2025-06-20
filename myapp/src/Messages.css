@@ -1,6 +1,6 @@
 .messages-page-container {
     display: flex;
-    height: 100vh; /* 画面の高さいっぱいに広げる */
+    height: 100vh; 
   }
   
   .messages-sidebar {

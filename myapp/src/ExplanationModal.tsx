@@ -1,9 +1,7 @@
-// src/ExplanationModal.tsx
-
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Post } from './PostList';
-import './QuoteRetweetModal.css'; // スタイルは既存の引用RTモーダルのものを流用します
+import './QuoteRetweetModal.css'; 
 
 interface ExplanationModalProps {
   originalPost: Post;

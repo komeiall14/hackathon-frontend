@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';
 import { PageHeader } from './PageHeader';
-import './SpacePage.css'; // 次に作成します
+import './SpacePage.css'; 
 
 // App.tsxから渡されるcontextの型
 interface AppContextType {
@@ -32,8 +32,6 @@ export const SpacePage: React.FC = () => {
   const webSocket = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-// 既存のuseEffectをこの内容に置き換えてください
-
 useEffect(() => {
     // ログインしていない場合は何もしない
     if (!loginUser) {
@@ -41,12 +39,10 @@ useEffect(() => {
       return;
     }
 
-    // ▼▼▼ この行を追加 ▼▼▼
     let ws: WebSocket | null = null; // このeffectスコープ専用の変数として宣言
 
     // 認証トークンを取得してWebSocketに接続
     loginUser.getIdToken().then(token => {
-      // ▼▼▼ このeffectスコープ内のws変数に代入 ▼▼▼
       ws = new WebSocket(getWebSocketURL(token));
       webSocket.current = ws; // 送信処理などで使うためにrefにも保持する
 
@@ -71,7 +67,6 @@ useEffect(() => {
       };
     });
 
-    // ▼▼▼ クリーンアップ関数を修正 ▼▼▼
     // コンポーネントがアンマウントされるときに接続を閉じる
     return () => {
       // このeffectスコープで作成されたwsインスタンスがあれば閉じる

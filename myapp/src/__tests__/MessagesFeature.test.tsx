@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { MessagesPage } from './MessagesPage';
-import { ChatWindow } from './ChatWindow';
+import { MessagesPage } from '../MessagesPage';
+import { ChatWindow } from '../ChatWindow';
 import { User as FirebaseUser } from 'firebase/auth';
 
 global.fetch = jest.fn();

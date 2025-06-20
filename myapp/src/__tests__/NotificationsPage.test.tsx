@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { NotificationsPage } from './NotificationsPage';
+import { NotificationsPage } from '../NotificationsPage';
 import { User as FirebaseUser } from 'firebase/auth';
 
 global.fetch = jest.fn();

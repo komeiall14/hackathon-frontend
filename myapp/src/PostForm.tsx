@@ -1,5 +1,3 @@
-// src/PostForm.tsx
-
 import React, { useState, useRef } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import toast from 'react-hot-toast';
@@ -137,7 +135,6 @@ export const PostForm: React.FC<PostFormProps> = ({ loginUser, onPostSuccess, on
   };
 
   return (
-    // ▼▼▼ このブロック全体を修正 ▼▼▼
     <form onSubmit={handleNormalSubmit}>
       <div style={{ display: 'flex', gap: '12px' }}>
         {/* 左側にアイコンを表示 */}
@@ -201,6 +198,5 @@ export const PostForm: React.FC<PostFormProps> = ({ loginUser, onPostSuccess, on
         </div>
       </div>
     </form>
-    // ▲▲▲ 修正ここまで ▲▲▲
   );
 };

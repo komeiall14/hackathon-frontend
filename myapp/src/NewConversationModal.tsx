@@ -1,11 +1,9 @@
-// NewConversationModal.tsx (新規作成)
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';
 import { UserProfileData } from './UserProfile';
 import toast from 'react-hot-toast';
-import './NewConversationModal.css'; // 次に作成するCSS
+import './NewConversationModal.css'; 
 
 interface NewConversationModalProps {
   loginUser: FirebaseUser;
@@ -26,7 +24,6 @@ export const NewConversationModal: React.FC<NewConversationModalProps> = ({ logi
 
     setIsSearching(true);
     try {
-      // 既存のユーザー検索APIを利用
       const response = await fetch(`${BACKEND_API_URL}/user?name=${encodeURIComponent(searchQuery.trim())}`);
       if (!response.ok) throw new Error('ユーザーの検索に失敗しました。');
       const data: UserProfileData[] = await response.json();

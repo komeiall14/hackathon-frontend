@@ -1,11 +1,7 @@
-// src/UserListItem.tsx
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserProfileData } from './UserProfile';
-// ▼▼▼ 修正箇所 ▼▼▼
 import { InitialAvatar } from './InitialAvatar';
-// ▲▲▲ 修正ここまで ▲▲▲
 
 interface UserListItemProps {
   user: UserProfileData;
@@ -16,7 +12,6 @@ export const UserListItem: React.FC<UserListItemProps> = ({ user, onFollowToggle
   return (
     <div className="user-list-item">
       <Link to={`/users/${user.firebase_uid}`} className="user-list-item-link">
-        {/* ▼▼▼ 修正箇所 ▼▼▼ */}
         <div className="user-list-item-avatar">
           {user.profile_image_url && user.profile_image_url.startsWith('http') ? (
             <img 
@@ -28,7 +23,6 @@ export const UserListItem: React.FC<UserListItemProps> = ({ user, onFollowToggle
             <InitialAvatar name={user.name} size={48} />
           )}
         </div>
-        {/* ▲▲▲ 修正ここまで ▲▲▲ */}
         <div className="user-list-item-body">
           <span className="user-list-item-name">{user.name}</span>
           <p className="user-list-item-bio">{user.bio || ''}</p>

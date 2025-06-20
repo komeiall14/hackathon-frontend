@@ -159,17 +159,14 @@ h1, h2 {
   color: #e0245e;
 }
 
-/* --- ここから追記 --- */
-/* src/App.css */
-
 .nav-link {
-  display: flex;         /* ★ 修正: flexboxレイアウトに変更 */
-  align-items: center;   /* ★ 追加: アイコンとテキストを垂直方向中央に揃える */
-  width: fit-content;    /* ★ 追加: 中身のコンテンツに幅を合わせる */
+  display: flex;         
+  align-items: center;   
+  width: fit-content;    
   padding: 12px 20px;
   margin-bottom: 8px;
   font-size: 20px;
-  font-weight: 700;      /* 700はboldと同じです */
+  font-weight: 700;     
   color: white;
   text-decoration: none;
   border-radius: 9999px;
@@ -276,22 +273,17 @@ h1, h2 {
   border-bottom: 1px solid #38444d;
 }
 
-/* App.css の末尾などに追加 */
-
 .post-item-wrapper {
-  /* このラッパーは投稿間の線だけを担当します */
   border-bottom: 1px solid #38444d;
 }
 .post-item-wrapper:hover {
   background-color: #1a2a3a;
 }
 
-/* 以前の正常な表示に戻すため、post-itemのpaddingを復活させます */
 .post-item {
   display: flex;
-  padding: 15px; /* ★ このpaddingを戻すのが重要です */
+  padding: 15px; 
 }
-/* ホバー効果はwrapperに任せるため、こちらでは不要です */
 .post-item:hover {
   background-color: transparent;
 }
@@ -330,8 +322,6 @@ h1, h2 {
   border-radius: 16px;
   margin-top: 12px;
 }
-
-/* App.css の末尾に追加 */
 
 /* メニュー外をクリックしたときに閉じるための透明なオーバーレイ */
 .menu-overlay-transparent {
@@ -383,8 +373,6 @@ h1, h2 {
   margin-right: 8px;
 }
 
-/* App.css の末尾に追加 */
-
 .post-item-wrapper {
   border-bottom: 1px solid #38444d;
 }
@@ -428,8 +416,6 @@ h1, h2 {
   background-color: rgba(255, 255, 255, 0.03);
 }
 
-/* App.css の末尾に追記 */
-
 /* リツイートボタンの基本スタイル */
 .post-actions .retweet-button {
   transition: color 0.2s;
@@ -457,8 +443,6 @@ h1, h2 {
   opacity: 0.8; /* ホバー時に少し薄くしてクリック可能であることを示す */
   text-decoration: underline; /* ホバー時は下線を表示してリンクであることを分かりやすくする */
 }
-
-/* App.css の末尾に追加 */
 
 .trends-container {
   background-color: #1a2a3a;
@@ -505,7 +489,6 @@ h1, h2 {
   display: block;
 }
 
-/* App.css に追加 */
 .hashtag-link {
   color: #1DA1F2; /* Twitterのリンク色 */
   text-decoration: none;
@@ -514,8 +497,6 @@ h1, h2 {
 .hashtag-link:hover {
   text-decoration: underline;
 }
-
-/* src/App.css の末尾に追記 */
 
 /* ログイン/ログアウトボタンをまとめるコンテナ */
 .auth-button-container {
@@ -558,8 +539,6 @@ h1, h2 {
   background-color: #0c85d0;
 }
 
-/* src/App.css の末尾に追記 */
-
 /* ナビゲーションリンクのアイコンを囲むラッパー */
 .nav-link-icon-wrapper {
   position: relative;
@@ -588,7 +567,6 @@ h1, h2 {
   border: 2px solid #15202B; /* 背景色と同じ色で縁取り */
 }
 
-/* src/App.css の末尾に追記 */
 
 /* bookmark-button のスタイル */
 .post-actions .bookmark-button {
@@ -601,8 +579,6 @@ h1, h2 {
   color: #1DA1F2;
 }
 
-/* src/App.css に追記 */
-
 .post-video {
   max-width: 100%;
   height: auto;
@@ -610,8 +586,6 @@ h1, h2 {
   margin-top: 12px;
   background-color: #000; /* 動画が読み込まれるまでの背景色を黒に指定 */
 }
-
-/* src/App.css の末尾などに追加してください */
 
 .home-header-sticky {
   position: sticky;
@@ -648,7 +622,6 @@ h1, h2 {
   font-size: 15px;
 }
 
-/* src/App.css の末尾に追加 */
 
 .top-right-auth {
   position: fixed; /* 画面に固定 */
@@ -657,7 +630,6 @@ h1, h2 {
   z-index: 1001; /* 他の要素より手前に表示 */
 }
 
-/* 右上に移動したボタンコンテナのスタイルを調整 */
 .top-right-auth .auth-button-container {
   flex-direction: row; /* ボタンを横に並べる */
   align-items: center;
@@ -665,13 +637,10 @@ h1, h2 {
   margin: 0; /* 上下のマージンをリセット */
 }
 
-/* 右上に移動したボタン自体のスタイルを調整 */
 .top-right-auth .pill-button {
   width: auto; /* ボタンの幅をコンテンツに合わせる */
   padding: 8px 16px; /* 少し小さくする */
 }
-
-/* src/App.css の末尾に追加 */
 
 /* ログイン時、ユーザー情報とメニュー全体を囲むコンテナ */
 .user-info-menu-container {
@@ -738,8 +707,6 @@ h1, h2 {
   background-color: rgba(224, 36, 94, 0.1);
 }
 
-/* App.css の末尾に追加 */
-
 /* bad-button のスタイル */
 .post-actions .bad-button {
   transition: color 0.2s;
@@ -752,8 +719,6 @@ h1, h2 {
 .post-actions .bad-button.badded {
   color: #7b8b9a;
 }
-
-/* App.css の末尾に追記 */
 
 .user-management-item {
   display: flex;

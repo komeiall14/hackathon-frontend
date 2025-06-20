@@ -55,7 +55,6 @@ export const FollowingPage: React.FC = () => {
           return {
             ...u,
             is_following: !u.is_following,
-            // フォロワー数の増減は、このページでは表示に影響しないため省略
           };
         }
         return u;

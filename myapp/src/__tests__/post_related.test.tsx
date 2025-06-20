@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { PostForm } from './PostForm';
-import { QuoteRetweetModal } from './QuoteRetweetModal';
+import { PostForm } from '../PostForm';
+import { QuoteRetweetModal } from '../QuoteRetweetModal';
 import { BrowserRouter } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';
 

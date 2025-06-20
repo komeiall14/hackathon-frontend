@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './OGPPreview.css'; // 次に作成します
+import './OGPPreview.css';
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 

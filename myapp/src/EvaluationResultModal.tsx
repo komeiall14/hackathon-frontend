@@ -1,7 +1,4 @@
-// src/EvaluationResultModal.tsx
-
 import React from 'react';
-// スタイルは既存の新規会話モーダルのものを流用します
 import './NewConversationModal.css'; 
 
 interface EvaluationResultModalProps {
@@ -67,8 +64,6 @@ export const EvaluationResultModal: React.FC<EvaluationResultModalProps> = ({ sc
             </p>
           )}
         </div>
-        
-        {/* ▼▼▼ このボタンのスタイルを修正 ▼▼▼ */}
         <button 
             onClick={onClose} 
             style={{
@@ -92,7 +87,6 @@ export const EvaluationResultModal: React.FC<EvaluationResultModalProps> = ({ sc
         >
             閉じる
         </button>
-        {/* ▲▲▲ 修正ここまで ▲▲▲ */}
 
       </div>
     </div>

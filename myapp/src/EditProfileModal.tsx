@@ -1,9 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
-// ▼▼▼ 修正箇所(1/3) ▼▼▼
-import { useNavigate } from 'react-router-dom'; // useNavigateをインポート
+import { useNavigate } from 'react-router-dom'; 
 import { fireAuth } from './firebase';
-import { updateProfile } from "firebase/auth"; // updateProfileをインポート
-// ▲▲▲ 修正ここまで ▲▲▲
+import { updateProfile } from "firebase/auth"; 
 import toast from 'react-hot-toast';
 import './EditProfileModal.css';
 import { UserProfileData } from './UserProfile';
@@ -110,12 +108,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
       toast.success('プロフィールを更新しました！');
       onUpdate();
       onClose();
-
-      // ▼▼▼ 修正箇所(3/3) ▼▼▼
-      // ホームページに遷移することで、アプリケーション全体をリフレッシュし、
-      // 最新のユーザー情報を読み込ませる
       navigate('/');
-      // ▲▲▲ 修正ここまで ▲▲▲
 
     } catch (err: any) {
       toast.error(`エラー: ${err.message}`);

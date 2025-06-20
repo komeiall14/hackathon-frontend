@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { UserProfile } from './UserProfile';
-import { SearchResults } from './SearchResults';
-import { NotificationsPage } from './NotificationsPage';
+import { UserProfile } from '../UserProfile';
+import { SearchResults } from '../SearchResults';
+import { NotificationsPage } from '../NotificationsPage';
 
 global.fetch = jest.fn();
 jest.mock('react-router-dom', () => ({

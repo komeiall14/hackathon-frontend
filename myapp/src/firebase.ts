@@ -1,8 +1,6 @@
 import { initializeApp} from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Firebaseコンソールで表示される設定情報をここに記述します。
-// APIキーなどのセンシティブな情報は環境変数から取得するように設定してください。
 const firebaseConfig = {
     apiKey: process.env.REACT_APP_API_KEY,
     authDomain: process.env.REACT_APP_AUTH_DOMAIN,

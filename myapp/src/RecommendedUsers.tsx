@@ -1,13 +1,9 @@
-// src/RecommendedUsers.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User as FirebaseUser } from 'firebase/auth';
 import { UserProfileData } from './UserProfile';
 import toast from 'react-hot-toast';
-// ▼▼▼ 修正箇所 ▼▼▼
 import { InitialAvatar } from './InitialAvatar';
-// ▲▲▲ 修正ここまで ▲▲▲
 
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
@@ -57,7 +53,6 @@ export const RecommendedUsers: React.FC<RecommendedUsersProps> = ({ loginUser })
             key={user.id} 
             className="user-management-item"
           >
-            {/* ▼▼▼ 修正箇所 ▼▼▼ */}
             <div className="user-management-avatar">
               {user.profile_image_url && user.profile_image_url.startsWith('http') ? (
                 <img 
@@ -69,7 +64,6 @@ export const RecommendedUsers: React.FC<RecommendedUsersProps> = ({ loginUser })
                 <InitialAvatar name={user.name} size={40} />
               )}
             </div>
-            {/* ▲▲▲ 修正ここまで ▲▲▲ */}
             <div style={{display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
                 <span className="user-management-name">{user.name}</span>
                 <p style={{fontSize: '14px', color: '#8899a6', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
