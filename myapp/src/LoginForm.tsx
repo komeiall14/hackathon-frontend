@@ -1,25 +1,25 @@
-// src/LoginForm.tsx をこの内容に丸ごと置き換えてください
+// src/LoginForm.tsx
 
 import React, { useState, useEffect, useRef } from 'react';
 import { signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from "firebase/auth";
 import { fireAuth } from "./firebase";
 import toast from 'react-hot-toast';
-import { FaSignOutAlt } from 'react-icons/fa'; // アイコンを追加
+import { FaSignOutAlt } from 'react-icons/fa';
+// ▼▼▼ 修正箇所 ▼▼▼
+import { InitialAvatar } from './InitialAvatar';
+// ▲▲▲ 修正ここまで ▲▲▲
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
-// ★ loginUser を受け取るように props を更新
 interface LoginFormProps {
   loginUser: FirebaseUser | null;
   onLoginSuccess: () => void;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ loginUser, onLoginSuccess }) => {
-    // ★ ドロップダウンメニューの開閉を管理するstate
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    // Googleでログインする関数 (変更なし)
     const signInWithGoogle = async () => {
         const provider = new GoogleAuthProvider();
         try {
@@ -39,18 +39,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ loginUser, onLoginSuccess 
         }
     };
 
-    // ログアウトする関数 (変更なし)
     const signOutWithGoogle = async () => {
         try {
             await signOut(fireAuth);
             toast.success("ログアウトしました");
-            setIsMenuOpen(false); // メニューを閉じる
+            setIsMenuOpen(false);
         } catch (err: any) {
             toast.error(err.message);
         }
     };
 
-    // ★ メニューの外側をクリックしたときにメニューを閉じる処理
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -61,9 +59,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ loginUser, onLoginSuccess 
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [menuRef]);
 
-    // ★ ログイン状態によって表示を切り替える
     if (!loginUser) {
-        // ログアウト時の表示
         return (
             <div className="auth-button-container">
                 <button onClick={signInWithGoogle} className="pill-button primary">
@@ -73,15 +69,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({ loginUser, onLoginSuccess 
         );
     }
 
-    // ログイン時の表示
     return (
         <div className="user-info-menu-container" ref={menuRef}>
             <div className="user-info-container" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                <img 
-                    src={loginUser.photoURL || '/default-avatar.png'} 
-                    alt="user avatar" 
-                    className="user-info-avatar"
-                />
+                {/* ▼▼▼ 修正箇所 ▼▼▼ */}
+                <div className="user-info-avatar">
+                  {loginUser.photoURL && loginUser.photoURL.startsWith('http') ? (
+                    <img 
+                        src={loginUser.photoURL} 
+                        alt="user avatar"
+                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}}
+                    />
+                  ) : (
+                    <InitialAvatar name={loginUser.displayName || ""} size={32} />
+                  )}
+                </div>
+                {/* ▲▲▲ 修正ここまで ▲▲▲ */}
                 <span className="user-info-name">{loginUser.displayName}</span>
             </div>
 

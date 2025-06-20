@@ -1,9 +1,14 @@
+// src/ConversationListItem.tsx
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfileData } from './UserProfile';
-import { Message } from './MessagesPage'; // 次のステップで作成します
+import { Message } from './MessagesPage';
+// ▼▼▼ 修正箇所 ▼▼▼
+import { InitialAvatar } from './InitialAvatar';
+// ▲▲▲ 修正ここまで ▲▲▲
 
-// このコンポーネントが受け取るプロパティの型
+
 export interface ConversationSummary {
   conversation_id: string;
   other_user: UserProfileData;
@@ -24,11 +29,19 @@ export const ConversationListItem: React.FC<ConversationListItemProps> = ({ conv
       className={`conversation-list-item ${isSelected ? 'selected' : ''}`}
       onClick={() => navigate(`/messages/${conversation.conversation_id}`)}
     >
-      <img 
-        src={conversation.other_user.profile_image_url || '/default-avatar.png'} 
-        alt={conversation.other_user.name} 
-        className="conversation-avatar"
-      />
+      {/* ▼▼▼ 修正箇所 ▼▼▼ */}
+      <div className="conversation-avatar">
+        {conversation.other_user.profile_image_url && conversation.other_user.profile_image_url.startsWith('http') ? (
+          <img 
+            src={conversation.other_user.profile_image_url} 
+            alt={conversation.other_user.name}
+            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}}
+          />
+        ) : (
+          <InitialAvatar name={conversation.other_user.name} size={48} />
+        )}
+      </div>
+      {/* ▲▲▲ 修正ここまで ▲▲▲ */}
       <div className="conversation-details">
         <div className="conversation-header">
           <span className="conversation-user-name">{conversation.other_user.name}</span>

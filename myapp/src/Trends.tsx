@@ -1,3 +1,5 @@
+// src/Trends.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -43,7 +45,8 @@ export const Trends: React.FC = () => {
   }
 
   return (
-    <div className="trends-container">
+    // ▼▼▼ 変更箇所はこの行です ▼▼▼
+    <div className="trends-container" style={{ maxHeight: '40vh', overflowY: 'auto' }}>
       <h3>日本のトレンド</h3>
       {trends.length > 0 ? (
         <ul className="trends-list">

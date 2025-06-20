@@ -1,8 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
+// ▼▼▼ 修正箇所(1/3) ▼▼▼
+import { useNavigate } from 'react-router-dom'; // useNavigateをインポート
 import { fireAuth } from './firebase';
+import { updateProfile } from "firebase/auth"; // updateProfileをインポート
+// ▲▲▲ 修正ここまで ▲▲▲
 import toast from 'react-hot-toast';
 import './EditProfileModal.css';
-import { UserProfileData } from './UserProfile'; 
+import { UserProfileData } from './UserProfile';
+import { InitialAvatar } from './InitialAvatar';
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
@@ -17,9 +22,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
   const [bio, setBio] = useState(user.bio || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ▼▼▼ 修正箇所(2/3) ▼▼▼
+  const navigate = useNavigate(); // navigate関数を取得
+  // ▲▲▲ 修正ここまで ▲▲▲
+
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [headerImageFile, setHeaderImageFile] = useState<File | null>(null);
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(user.profile_image_url);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
   const [headerImagePreview, setHeaderImagePreview] = useState<string | null>(user.header_image_url);
 
   const profileImageInputRef = useRef<HTMLInputElement>(null);
@@ -55,13 +64,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
   }, []);
 
   const handleSave = async () => {
-    if (!fireAuth.currentUser) {
+    const currentUser = fireAuth.currentUser;
+    if (!currentUser) {
       toast.error("ログインしていません。");
       return;
     }
     setIsSubmitting(true);
     try {
-      const token = await fireAuth.currentUser.getIdToken();
+      const token = await currentUser.getIdToken();
       let profileImageUrl = user.profile_image_url || "";
       let headerImageUrl = user.header_image_url || "";
 
@@ -72,6 +82,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
         headerImageUrl = await uploadImage(headerImageFile, token);
       }
 
+      // アプリのDBを更新
       const response = await fetch(`${BACKEND_API_URL}/api/profile`, {
         method: 'PUT',
         headers: {
@@ -90,9 +101,22 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
         throw new Error('プロフィールの更新に失敗しました。');
       }
 
+      // Firebase Authenticationのプロフィール情報も更新
+      await updateProfile(currentUser, {
+        displayName: name,
+        photoURL: profileImageUrl
+      });
+
       toast.success('プロフィールを更新しました！');
       onUpdate();
       onClose();
+
+      // ▼▼▼ 修正箇所(3/3) ▼▼▼
+      // ホームページに遷移することで、アプリケーション全体をリフレッシュし、
+      // 最新のユーザー情報を読み込ませる
+      navigate('/');
+      // ▲▲▲ 修正ここまで ▲▲▲
+
     } catch (err: any) {
       toast.error(`エラー: ${err.message}`);
     } finally {
@@ -118,22 +142,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
           <div className="image-upload-section">
             <div className="header-upload">
               <img src={headerImagePreview || '/default-header.png'} alt="Header Preview" />
-              <button
-                type="button"
-                onClick={() => headerImageInputRef.current?.click()}
-                title="ヘッダー画像を変更"
-              >
+              <button type="button" onClick={() => headerImageInputRef.current?.click()} title="ヘッダー画像を変更">
                 <CameraIcon />
               </button>
               <input type="file" accept="image/*" ref={headerImageInputRef} onChange={(e) => handleImageChange(e, 'header')} style={{ display: 'none' }} />
             </div>
             <div className="profile-image-upload">
-              <img src={profileImagePreview || '/default-avatar.png'} alt="Profile Preview" />
-              <button
-                type="button"
-                onClick={() => profileImageInputRef.current?.click()}
-                title="プロフィール画像を変更"
-              >
+              {profileImagePreview ? (
+                <img src={profileImagePreview} alt="Profile Preview" />
+              ) : (user.profile_image_url && user.profile_image_url.startsWith('http')) ? (
+                <img src={user.profile_image_url} alt="Profile Preview" />
+              ) : (
+                <InitialAvatar name={user.name} size={112} />
+              )}
+              <button type="button" onClick={() => profileImageInputRef.current?.click()} title="プロフィール画像を変更">
                 <CameraIcon />
               </button>
               <input type="file" accept="image/*" ref={profileImageInputRef} onChange={(e) => handleImageChange(e, 'profile')} style={{ display: 'none' }} />
@@ -147,10 +169,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
             <label htmlFor="bio">自己紹介</label>
             <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={4}></textarea>
           </div>
-
-          {/* ▼▼▼ ここからが追加部分です ▼▼▼ */}
           <div style={{ borderTop: '1px solid #38444d', margin: '20px 0' }}></div>
-
           <div className="form-group">
             <label>パスワードとセキュリティ</label>
             <p style={{ color: '#8899a6', fontSize: '14px', margin: '0 0 10px 0' }}>
@@ -161,14 +180,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
               target="_blank" 
               rel="noopener noreferrer"
               style={{
-                  display: 'inline-block',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: '1px solid #536471',
-                  textDecoration: 'none',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  transition: 'background-color 0.2s'
+                  display: 'inline-block', padding: '8px 16px', borderRadius: '20px',
+                  border: '1px solid #536471', textDecoration: 'none', color: 'white',
+                  fontWeight: 'bold', transition: 'background-color 0.2s'
               }}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(231, 233, 234, 0.1)'}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -176,8 +190,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
               Googleアカウント設定を開く
             </a>
           </div>
-          {/* ▲▲▲ ここまでが追加部分です ▲▲▲ */}
-
         </div>
         <div className="modal-footer">
           <button onClick={handleSave} disabled={isSubmitting}>

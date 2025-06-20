@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import './App.css';
+import './ExperienceControl.css'; 
 import { LoginForm } from './LoginForm';
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth"; 
 import { fireAuth } from './firebase'; 
@@ -18,6 +19,11 @@ import { FollowingPage } from './FollowingPage'; // ▼▼▼ 追加
 import { FollowersPage } from './FollowersPage'; // ▼▼▼ 追加
 import { MessagesPage } from './MessagesPage';
 import { Trends } from './Trends'; 
+import { RecommendedUsers } from './RecommendedUsers'; 
+import { ExplanationModal } from './ExplanationModal'; // 新しく作成したコンポーネント
+import { EvaluationResultModal } from './EvaluationResultModal'; // 新しく作成したコンポーネント
+import { InitialAvatar } from './InitialAvatar';
+import { UserProfileData } from './UserProfile'; 
 
 
 interface User {
@@ -25,6 +31,7 @@ interface User {
   name: string;
   age: number | null;
   firebase_uid: string | null;
+  profile_image_url: string | null; 
 }
 
 const PAGE_SIZE = 20; // 1ページあたりの投稿数
@@ -33,8 +40,6 @@ function App() {
   const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
   const [users, setUsers] = useState<User[]>([]); 
-  const [name, setName] = useState<string>('');
-  const [age, setAge] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>(''); 
   const [message, setMessage] = useState<string>('');
   const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null); 
@@ -66,9 +71,41 @@ function App() {
       }
     },
   });
+
+  const [loginUserProfile, setLoginUserProfile] = useState<UserProfileData | null>(null);
+
+  useEffect(() => {
+    const fetchLoginUserProfile = async () => {
+      if (!loginUser) return;
+      const token = await loginUser.getIdToken();
+      const res = await fetch(`${BACKEND_API_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLoginUserProfile(data);
+      }
+    };
+    fetchLoginUserProfile();
+  }, [loginUser]);
   
 
   const [isCreatingBot, setIsCreatingBot] = useState(false); // Bot生成中の状態を管理
+  const [showExplanationButton, setShowExplanationButton] = useState(false);
+
+  const [experienceMode, setExperienceMode] = useState<'none' | 'buzz' | 'flame'>('none');
+  const [experienceTargetPost, setExperienceTargetPost] = useState<Post | null>(null);
+  const experienceIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const [isExplanationModalOpen, setIsExplanationModalOpen] = useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState<{score: number, review: string} | null>(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
+  useEffect(() => {
+    // showExplanationButton の値が変化するたびに、その値をコンソールに出力します
+    console.log("showExplanationButton の現在の値:", showExplanationButton);
+  }, [showExplanationButton]); // showExplanationButtonが変わるたびに実行
 
   // handleCreateBotAndPost関数を以下のように修正
   const handleCreateBotAndPost = async (shouldReload: boolean) => {
@@ -136,9 +173,7 @@ function App() {
       }, 5000); // 5秒
     }
   };
-  // ▲▲▲【ここまで追加】▲▲▲
-  // ▼▼▼ 変更点2: useCallbackの依存配列を修正 ▼▼▼
-// App.tsx
+
 
   const fetchPosts = useCallback(async (isInitialLoad: boolean, currentUser: FirebaseUser | null) => {
     setIsLoading(true);
@@ -271,13 +306,15 @@ function App() {
     // 最初に一度取得
     fetchUnreadCount(); 
 
-    // 30秒ごとに未読件数をポーリング（定期取得）
-    const intervalId = setInterval(fetchUnreadCount, 30000); 
+    // 体験モード中は1.5秒ごと、通常時は30秒ごとに未読件数をポーリング
+    const interval = experienceMode !== 'none' ? 1500 : 30000;
+    
+    const intervalId = setInterval(fetchUnreadCount, interval); 
 
-    // コンポーネントがアンマウントされる時にインターバルをクリア
+    // コンポーネントがアンマウントされる時、または依存配列の値が変わる時にインターバルをクリア
     return () => clearInterval(intervalId);
 
-  }, [loginUser]); // loginUserが変わった時（ログイン/ログアウト時）に実行
+  }, [loginUser, experienceMode]); // loginUserが変わった時（ログイン/ログアウト時）に実行
   
   // 通知ページにいる場合は、カウントを0にする
   useEffect(() => {
@@ -331,50 +368,202 @@ function App() {
     );
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setMessage('Name cannot be empty.');
-      return;
-    }
-    if (name.trim().length > 50) {
-      setMessage('Name must be 50 characters or less.');
-      return;
-    }
-    const ageNum = parseInt(age, 10);
-    if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
-      setMessage('Age must be a valid number between 0 and 150.');
-      return;
-    }
-    setMessage('Creating user...');
-    try {
-      const response = await fetch(`${BACKEND_API_URL}/user`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), age: ageNum }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to create user: ${response.statusText} - ${errorText}`);
-      }
-      const data = await response.json();
-      console.log('User created successfully:', data);
-      setMessage(`User created with ID: ${data.id}`);
-      setName('');
-      setAge('');
-      fetchAllUsers();
-    } catch (error) {
-      console.error('Error creating user:', error);
-      setMessage(`Error creating user: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
       return;
     }
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
+  // 体験モードを停止する共通関数
+  const stopExperience = useCallback(() => {
+    if (experienceIntervalRef.current) {
+        clearInterval(experienceIntervalRef.current);
+        experienceIntervalRef.current = null;
+    }
+    const currentMode = experienceMode;
+    setExperienceMode('none');
+    setExperienceTargetPost(null);
+    setShowExplanationButton(false); // ★ この行を追加: 弁明ボタンを非表示にする
+
+    if (currentMode === 'buzz') toast.success("バズり体験が終了しました。");
+    if (currentMode === 'flame') toast.success("炎上が鎮火しました。");
+  }, [experienceMode]);
+
+  // バズり体験を開始する関数
+  const startBuzzExperience = (post: Post) => {
+    if (!loginUser) return;
+    setExperienceMode('buzz');
+    setExperienceTargetPost(post);
+    onPostSuccess(post);
+
+    toast.success("投稿がシェアされ始めました！", { duration: 5000 });
+
+    // 5秒後にバズりを開始
+    setTimeout(() => {
+        toast.success("バズり体験スタート！20秒間、通知が鳴り止みません！", { duration: 4000 });
+
+        // 20秒後に体験を終了させるタイマー
+        const experienceTimeoutId = setTimeout(() => {
+            stopExperience();
+        }, 20000);
+
+        // ボットアクションを開始
+        // ボットアクションを開始
+        experienceIntervalRef.current = setInterval(async () => {
+          const currentUser = fireAuth.currentUser;
+          if (!currentUser) {
+              stopExperience();
+              return;
+          }
+          try {
+              // ▼▼▼ このブロックを修正 ▼▼▼
+              const response = await fetch(`${BACKEND_API_URL}/api/bot/experience-action`, { // response を受け取る
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${await currentUser.getIdToken()}` },
+                  body: JSON.stringify({ targetPostId: post.post_id, type: "positive" }),
+              });
+
+              const result = await response.json(); // APIからの応答をパース
+              // リプライ、リツイート、引用の場合のみタイムラインをリフレッシュする
+              if (result.action === "positive_reply" || result.action === "retweet" || result.action === "positive_quote") {
+                  triggerRefresh();
+              }
+              // ▲▲▲ 修正ここまで ▲▲▲
+          } catch (err) {
+              console.error("Bot action failed:", err);
+          }
+      }, 1000); // 間隔は前回の修正値を反映
+
+    }, 5000);
+  };
+  // 炎上体験を開始する関数
+  const startFlameExperience = (post: Post) => {
+    if (!loginUser) return;
+    setExperienceMode('flame');
+    setExperienceTargetPost(post);
+    onPostSuccess(post);
+
+    toast.error("投稿が多くの人の目に留まり、様々な意見が寄せられ始めています...", { duration: 5000 });
+
+    // 5秒後に炎上(ボットのアクション)を開始
+    setTimeout(() => {
+        toast.error("炎上体験スタート！的確な弁明で鎮火させましょう！", { duration: 4000 });
+
+        experienceIntervalRef.current = setInterval(async () => {
+          const currentUser = fireAuth.currentUser;
+          if (!currentUser) {
+              stopExperience();
+              return;
+          }
+          try {
+              // ▼▼▼ このブロックを修正 ▼▼▼
+              const response = await fetch(`${BACKEND_API_URL}/api/bot/experience-action`, { // response を受け取る
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${await currentUser.getIdToken()}` },
+                  body: JSON.stringify({ targetPostId: post.post_id, type: "negative" }),
+              });
+
+              const result = await response.json(); // APIからの応答をパース
+              // リプライ、リツイート、引用の場合のみタイムラインをリフレッシュする
+              if (result.action === "negative_reply" || result.action === "retweet" || result.action === "negative_quote") {
+                  triggerRefresh();
+              }
+            } catch (err) {
+                console.error("Bot action failed:", err);
+            }
+        }, 1000);
+    }, 5000);
+
+    // ★★★ このタイマーが抜けていました ★★★
+    //8秒後に「弁明する」ボタンを表示させるタイマー
+    setTimeout(() => {
+        setShowExplanationButton(true);
+    }, 8000); // 8000ミリ秒 = 8秒
+  };
+
+  // 弁明をバックエンドに送って評価してもらう関数
+  // App.tsx の handleExplanationSubmit をこの内容に置き換えてください
+
+  const handleExplanationSubmit = async (explanationText: string) => {
+    if (!experienceTargetPost || !loginUser) return;
+    
+    setIsEvaluating(true);
+    setIsExplanationModalOpen(false);
+    toast.loading("Geminiがあなたの弁明を評価しています...");
+
+    try {
+      const token = await loginUser.getIdToken();
+
+      // 弁明の投稿処理（ここは変更なし）
+      const postResponse = await fetch(`${BACKEND_API_URL}/post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          content: `【弁明】\n${explanationText}`,
+          original_post_id: experienceTargetPost.post_id
+        }),
+      });
+      if (!postResponse.ok) throw new Error("弁明の投稿に失敗しました。");
+      const explanationPost = await postResponse.json();
+      triggerRefresh();
+
+      // ▼▼▼ ここが修正箇所です ▼▼▼
+      // 評価APIを呼び出す際のヘッダーを修正しました
+      const evalResponse = await fetch(`${BACKEND_API_URL}/api/gemini/evaluate-explanation`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          // 'Authorization'の値に "Bearer " という接頭辞を追加
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          originalPostId: experienceTargetPost.post_id,
+          explanationPostId: explanationPost.post_id,
+          originalContent: experienceTargetPost.content,
+          explanationContent: explanationText
+        })
+      });
+      // ▲▲▲ 修正ここまで ▲▲▲
+
+      if (!evalResponse.ok) {
+          // 401エラーの場合は、より具体的なメッセージを出す
+          if (evalResponse.status === 401) {
+              throw new Error("評価APIの認証に失敗しました。再度ログインしてお試しください。");
+          }
+          throw new Error("弁明の評価に失敗しました。");
+      }
+      
+      const result = await evalResponse.json();
+      setEvaluationResult(result);
+      setIsEvaluationModalOpen(true);
+      
+      if (result.score >= 70) {
+        stopExperience();
+      } else {
+        toast.error("残念ながら、弁明は受け入れられませんでした。");
+      }
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsEvaluating(false);
+      toast.dismiss();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      // コンポーネントが消える時に、実行中のタイマーをすべてクリアする
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (experienceIntervalRef.current) clearInterval(experienceIntervalRef.current);
+    };
+  }, []); 
+
+  // 投稿成功時の共通処理
+  const onPostSuccess = (newPost: Post) => {
+    setPosts(prev => [newPost, ...prev]);
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -412,7 +601,17 @@ function App() {
 
           {loginUser && (
             <Link to={`/users/${loginUser.uid}`} className="nav-link">
-              <FaUser />
+              <div style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {loginUser.photoURL && loginUser.photoURL.startsWith('http') ? (
+                  <img
+                    src={loginUser.photoURL}
+                    alt="your avatar"
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <InitialAvatar name={loginUser.displayName || ''} size={28} />
+                )}
+              </div>
               <span style={{ marginLeft: '16px' }}>プロフィール</span>
             </Link>
           )}
@@ -489,19 +688,15 @@ function App() {
           </button>
         </aside>
         <main className="main-content">
-            {/* ▼▼▼ このOutletのcontextを修正 ▼▼▼ */}
             <Outlet context={{ 
               // 既存のcontext
               loginUser, 
-              triggerRefresh,
-
-              // タイムライン用のstateと関数を追加で渡す
               posts,
-              isLoading: isLoading && posts.length === 0, // 初回ロード中のみisLoadingをtrueにする
+              isLoading: isLoading && posts.length === 0,
               error,
               hasMore,
-              bottomRef: ref, // useInView の ref を渡す
-              onPostCreation: handlePostCreation,
+              bottomRef: ref,
+              onPostCreation: handlePostCreation, // お客様のコードに合わせています
               onUpdateSinglePost: handleUpdateSinglePost,
               onUpdate: () => {
                 setPosts([]);
@@ -511,6 +706,17 @@ function App() {
               },
               feedType,
               setFeedType,
+
+              // 体験モード用のprops
+              experienceMode,
+              experienceTargetPost,
+              showExplanationButton, // ★★★ この行が抜けていました ★★★
+              openExplanationModal: (post: Post) => {
+                setExperienceTargetPost(post);
+                setIsExplanationModalOpen(true);
+              },
+              onBuzzStart: startBuzzExperience,
+              onFlameStart: startFlameExperience,
             }} />
         </main>
         
@@ -531,43 +737,78 @@ function App() {
             </form>
           </section>
           <Trends />
+          <RecommendedUsers loginUser={loginUser} />
         </aside>
       </div>
+
+      {experienceMode !== 'none' && (
+        <div className={`experience-control-container ${experienceMode === 'flame' ? 'flame' : ''}`}>
+            <span className="experience-control-label">
+                {experienceMode === 'buzz' ? '🎉 バズり体験中 🎉' : '🔥 炎上体験中 🔥'}
+            </span>
+            <button onClick={stopExperience} className="experience-control-button">
+                強制終了
+            </button>
+        </div>
+      )}
+
+      {isExplanationModalOpen && experienceTargetPost && (
+        <ExplanationModal
+            originalPost={experienceTargetPost}
+            onClose={() => setIsExplanationModalOpen(false)}
+            onSubmit={handleExplanationSubmit}
+            isSubmitting={isEvaluating}
+        />
+      )}
+
+      {isEvaluationModalOpen && evaluationResult && (
+        <EvaluationResultModal
+            score={evaluationResult.score}
+            review={evaluationResult.review}
+            onClose={() => setIsEvaluationModalOpen(false)}
+        />
+      )}
 
       {showUserManagement && (
         <div className="modal-overlay" onClick={() => setShowUserManagement(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="modal-close-button" onClick={() => setShowUserManagement(false)}>×</button>
             <h2>ユーザー管理</h2>
-            {message && <p style={{ color: 'yellow', padding: '0 15px' }}>{message}</p>}
-            
-            <section className="modal-section">
-              <h3>Create New User</h3>
-              <form onSubmit={handleCreateUser}>
-                <div>
-                  <label htmlFor="name-modal">Name:</label>
-                  <input id="name-modal" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-                </div>
-                <div style={{ marginTop: '10px' }}>
-                  <label htmlFor="age-modal">Age:</label>
-                  <input id="age-modal" type="number" value={age} onChange={(e) => setAge(e.target.value)} required />
-                </div>
-                <button type="submit">Add User</button>
-              </form>
-            </section>
+            {message && <p style={{ color: 'yellow', padding: '0 15px' }}>{message}</p>}           
 
             <section className="modal-section">
               <h3>All Registered Users</h3>
               <div className="user-list">
                 {users.length === 0 ? <p>No users found.</p> : (
-                  <ul>{users.filter(user => !user.firebase_uid?.startsWith('bot_')).map((user) => (
-                      <li key={user.id}>
-                        Name: {user.name} | Age: {user.age || 'N/A'} | Firebase UID: {user.firebase_uid || 'N/A'}
-                      </li>
-                  ))}</ul>
+                  <div>
+                    {/* ▼▼▼ この部分が大きく変更されています ▼▼▼ */}
+                    {users.filter(user => user.firebase_uid && !user.firebase_uid.startsWith('bot_')).map((user) => (
+                      // 1. 各ユーザーがプロフィールページへの<Link>になる
+                      <Link 
+                        to={`/users/${user.firebase_uid}`} 
+                        key={user.id} 
+                        className="user-management-item"
+                        onClick={() => setShowUserManagement(false)}
+                      >
+                        <div className="user-management-avatar">
+                          {user.profile_image_url && user.profile_image_url.startsWith('http') ? (
+                            <img 
+                              src={user.profile_image_url} 
+                              alt={user.name}
+                              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}}
+                            />
+                          ) : (
+                            <InitialAvatar name={user.name} size={40} />
+                          )}
+                        </div>
+                        <span className="user-management-name">{user.name}</span>
+                      </Link>
+                  ))}
+                  </div>
                 )}
               </div>
             </section>
+
           </div>
         </div>
       )}

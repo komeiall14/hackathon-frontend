@@ -752,3 +752,31 @@ h1, h2 {
 .post-actions .bad-button.badded {
   color: #7b8b9a;
 }
+
+/* App.css の末尾に追記 */
+
+.user-management-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.2s;
+}
+
+.user-management-item:hover {
+  background-color: #1a2a3a;
+}
+
+.user-management-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.user-management-name {
+  font-weight: bold;
+}

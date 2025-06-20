@@ -7,6 +7,7 @@ import { fireAuth } from './firebase';
 import toast from 'react-hot-toast';
 import { EditProfileModal } from './EditProfileModal';
 import './UserProfile.css';
+import { InitialAvatar } from './InitialAvatar';
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
@@ -198,9 +199,24 @@ export const UserProfile: React.FC = () => {
         </div>
       </div>
       <div className="profile-header">
-        <img src={userProfile.header_image_url || '/default-header.png'} alt="ヘッダー画像" className="header-image" />
+        {userProfile.header_image_url && userProfile.header_image_url.startsWith('http') ? (
+          <img src={userProfile.header_image_url} alt="ヘッダー画像" className="header-image" />
+        ) : (
+          // ヘッダー画像がない場合、背景色付きの空のdivで高さを確保する
+          <div className="header-image"></div>
+        )}
         <div className="profile-avatar-container">
-          <img src={userProfile.profile_image_url || '/default-avatar.png'} alt="プロフィール画像" className="profile-avatar-image" />
+          {/* profile_image_urlが有効なURLならそれを表示 */}
+          {userProfile.profile_image_url && userProfile.profile_image_url.startsWith('http') ? (
+            <img 
+              src={userProfile.profile_image_url} 
+              alt="プロフィール画像" 
+              className="profile-avatar-image" 
+            />
+          ) : (
+            // そうでなければ、頭文字アイコンを表示
+            <InitialAvatar name={userProfile.name} size={135} />
+          )}
         </div>
       </div>
 

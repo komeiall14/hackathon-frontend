@@ -12,7 +12,7 @@ import { PageHeader } from './PageHeader'; // ★ インポートを追加
 // NotificationResponseの型定義
 export interface NotificationResponse {
   id: string;
-  type: 'like' | 'reply' | 'follow';
+  type: 'like' | 'reply' | 'follow' | 'quote_retweet';
   actor: UserProfileData;
   entity_id: string | null;
   is_read: boolean;

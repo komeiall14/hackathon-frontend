@@ -1,6 +1,11 @@
+// src/OriginalPost.tsx
+
 import React from 'react';
 import { Post } from './PostList';
 import { Link, useNavigate } from 'react-router-dom';
+// ▼▼▼ 修正箇所 ▼▼▼
+import { InitialAvatar } from './InitialAvatar';
+// ▲▲▲ 修正ここまで ▲▲▲
 
 interface OriginalPostProps {
   post: Post;
@@ -14,14 +19,11 @@ export const OriginalPost: React.FC<OriginalPostProps> = ({ post }) => {
     navigate(`/status/${post.post_id}`); 
   };
   
-  // ▼▼▼ 日付を安全にフォーマットする処理を追加 ▼▼▼
   const formattedDate = () => {
-    // post.created_at が存在し、有効な日付かどうかをチェック
     const date = new Date(post.created_at);
     if (post.created_at && !isNaN(date.getTime())) {
       return date.toLocaleString();
     }
-    // 無効な場合は代替テキストを返す
     return '日付情報なし'; 
   };
 
@@ -29,14 +31,20 @@ export const OriginalPost: React.FC<OriginalPostProps> = ({ post }) => {
     <div className="original-post-container" onClick={handleNavigate}>
       <div className="post-header">
         <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-          <img 
-            src={post.user_profile_image_url || '/default-avatar.png'} 
-            alt={`${post.user_name}のアバター`} 
-            style={{width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover', marginRight: '8px'}}
-          />
+          {/* ▼▼▼ 修正箇所 ▼▼▼ */}
+          <div style={{ marginRight: '8px' }}>
+            {post.user_profile_image_url && post.user_profile_image_url.startsWith('http') ? (
+              <img 
+                src={post.user_profile_image_url} 
+                alt={`${post.user_name}のアバター`} 
+                style={{width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover'}}
+              />
+            ) : (
+              <InitialAvatar name={post.user_name} size={24} />
+            )}
+          </div>
+          {/* ▲▲▲ 修正ここまで ▲▲▲ */}
           <span className="user-name" style={{fontSize: '15px'}}>{post.user_name}</span>
-          
-          {/* ▼▼▼ 安全にフォーマットした日付を表示 ▼▼▼ */}
           <span className="timestamp" style={{fontSize: '15px'}}> - {formattedDate()}</span>
         </Link>
       </div>

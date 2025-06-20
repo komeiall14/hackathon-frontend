@@ -1,4 +1,4 @@
-// src/Home.tsx (この内容に全体を置き換える)
+// src/Home.tsx
 
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
@@ -6,7 +6,7 @@ import { User as FirebaseUser } from "firebase/auth";
 import { PostList, Post } from './PostList';
 import { PostForm } from './PostForm';
 
-// App.tsxから渡されるcontextの型を定義
+// HomeContextTypeの型定義（App.tsxから渡される型）
 interface HomeContextType {
   loginUser: FirebaseUser | null;
   posts: Post[];
@@ -17,14 +17,19 @@ interface HomeContextType {
   onPostCreation: (newPost: Post) => void;
   onUpdateSinglePost: (updatedPost: Post) => void;
   onUpdate: () => void;
-  // ★ ここから追加
   feedType: 'forYou' | 'following';
   setFeedType: (type: 'forYou' | 'following') => void;
-  // ★ ここまで追加
+  // 新機能用のpropsを追加
+  onBuzzStart: (postToBuzz: Post) => void;
+  onFlameStart: (postToFlame: Post) => void;
+  experienceMode: 'none' | 'buzz' | 'flame';
+  experienceTargetPost: Post | null;
+  openExplanationModal: (post: Post) => void;
+  showExplanationButton: boolean; 
 }
 
 export const Home: React.FC = () => {
-  // Outletのcontextから状態と関数をすべて受け取る
+  // Outletのcontextから新しい値を受け取る
   const { 
     loginUser, 
     posts, 
@@ -35,11 +40,18 @@ export const Home: React.FC = () => {
     onPostCreation,
     onUpdateSinglePost,
     onUpdate,
-    feedType,       // ★ 追加
-    setFeedType,    // ★ 追加
+    feedType,
+    setFeedType,
+    onBuzzStart,
+    onFlameStart,
+    experienceMode,
+    experienceTargetPost,
+    openExplanationModal,
+    showExplanationButton, 
   } = useOutletContext<HomeContextType>();
+  console.log("Home component re-rendered. showExplanationButton is:", showExplanationButton);
 
-  // ★ タブのスタイルを定義
+  // タブのスタイル定義（変更なし）
   const tabStyle = {
     width: '50%',
     padding: '16px 0',
@@ -55,15 +67,12 @@ export const Home: React.FC = () => {
     borderBottom: '2px solid #1DA1F2',
   };
 
-
   return (
     <>
-      {/* ▼▼▼ この div でヘッダーとタブを囲み、stickyを適用します ▼▼▼ */}
       <div className="home-header-sticky">
         <h1>ホーム</h1>
         
         { loginUser && (
-          // display:flex と border-bottom のスタイルのみ残します
           <div style={{ display: 'flex', borderBottom: '1px solid #38444d' }}>
               <div 
                 style={feedType === 'forYou' ? activeTabStyle : tabStyle}
@@ -80,14 +89,52 @@ export const Home: React.FC = () => {
           </div>
         )}
       </div>
-      {/* ▲▲▲ ここまでがヘッダーブロックです ▲▲▲ */}
-
 
       {loginUser && (
         <section className="post-form-section">
-          <PostForm loginUser={loginUser} onPostSuccess={onPostCreation} />
+          <PostForm 
+            loginUser={loginUser} 
+            onPostSuccess={onPostCreation}
+            onBuzzStart={onBuzzStart}
+            onFlameStart={onFlameStart}
+          />
         </section>
       )}
+
+      {/* ▼▼▼ ここに「弁明する」ボタンを表示するUIブロックを追加 ▼▼▼ */}
+      {experienceMode === 'flame' && experienceTargetPost && showExplanationButton && (
+        <div style={{
+          position: 'sticky',
+          top: '115px', 
+          zIndex: 15,
+          padding: '15px 20px',
+          backgroundColor: 'rgba(21, 32, 43, 0.9)',
+          backdropFilter: 'blur(4px)',
+          borderBottom: '1px solid #e0245e'
+        }}>
+          <p style={{margin: 0, marginBottom: '10px', color: '#ffadad', fontWeight: 'bold'}}>
+            投稿が炎上中です。的確な弁明を行ってください。
+          </p>
+          <button
+            onClick={() => openExplanationModal(experienceTargetPost)}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: '#e0245e',
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            弁明を行う
+          </button>
+        </div>
+      )}
+      {/* ▲▲▲ 追加ここまで ▲▲▲ */}
+
       <PostList 
         posts={posts} 
         isLoading={isLoading} 
@@ -96,12 +143,11 @@ export const Home: React.FC = () => {
         loginUser={loginUser}  
         onUpdateSinglePost={onUpdateSinglePost}
       />
-      {/* 無限スクロールの検知用要素 */}
+      
       <div ref={bottomRef} style={{ height: '50px', textAlign: 'center' }}>
         {!isLoading && hasMore && posts.length > 0 && "読み込み中..."}
         {!hasMore && posts.length > 0 && "これ以上投稿はありません"}
       </div>
     </>
   );
-
 };

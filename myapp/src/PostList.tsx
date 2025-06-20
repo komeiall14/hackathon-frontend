@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react'; // useEffect をインポー
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
 import { FaRegComment, FaTrashAlt, FaRegHeart, FaHeart, FaRetweet, FaQuoteLeft, FaEye, FaRegBookmark, FaBookmark, FaThumbsDown, FaRegThumbsDown } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom'; 
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { QuoteRetweetModal } from './QuoteRetweetModal';
 import { OriginalPost } from './OriginalPost';
 import { OGPPreview } from './OGPPreview';
+import { InitialAvatar } from './InitialAvatar'; 
 
 export interface Post {
   post_id: string;
@@ -50,9 +51,8 @@ const extractFirstUrl = (text: string | null): string | null => {
 };
 
 export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser, title, onPostCreated, onUpdateSinglePost }) => {
-  // ... 以降のコードは変更なし
+  
   const navigate = useNavigate();
-  // ★ 変更点1: 内部で状態を管理するためのstateを追加
 
   const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState<string>('');
@@ -64,7 +64,7 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
   const [baddingInProgress, setBaddingInProgress] = useState<Set<string>>(new Set()); // ★ 追加
   
 
-  // ★ 変更点3: handleLike関数を「Optimistic Update」方式に書き換える
+  
   const handleLike = async (postToUpdate: Post) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
 
@@ -170,14 +170,19 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
     setReplyContent('');
   };
 
-  const handleReplySubmit = async (e: React.FormEvent, parentPostId: string) => {
+
+  const handleReplySubmit = async (e: React.FormEvent, parentPost: Post) => {
     e.preventDefault();
     if (!replyContent.trim()) { toast.error("返信内容を入力してください。"); return; }
     if (!loginUser) { toast.error('ログインしてください。'); return; }
+    
+    // parentPostから投稿者IDを取得し、ボットかどうかを判定
+    const isReplyingToBot = parentPost.user_id.startsWith('bot_');
+
     const token = await loginUser.getIdToken();
 
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/posts/reply/${parentPostId}`, {
+      const response = await fetch(`${BACKEND_API_URL}/api/posts/reply/${parentPost.post_id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -188,14 +193,35 @@ export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onU
           user_name: loginUser.displayName || "名無しさん"
         }),
       });
+
       if (!response.ok) { throw new Error('リプライの投稿に失敗しました。'); }
+
       setReplyingToPostId(null);
       setReplyContent('');
-      onUpdate(); // 新しいリプライを反映するために全体を更新
-      toast.success('リプライを投稿しました！'); 
-    } catch (err: any) { toast.error(err.message); }
-  };
+      toast.success('リプライを投稿しました！');
+      
+      // ▼▼▼ ここからが新しいロジックです ▼▼▼
+      // もし返信相手がボットの場合
+      if (isReplyingToBot) {
+          // ユーザーに、AIが返信を準備中であることを伝える
+          toast('🤖 AIが返信を考えています...', {
+            duration: 3500, // 3.5秒間表示
+            icon: '...',
+          });
+          // 4秒後にタイムライン全体を更新して、ボットの返信を表示する
+          setTimeout(() => {
+              onUpdate(); 
+          }, 4000); // 4000ミリ秒 = 4秒
+      } else {
+          // 返信相手が人間の場合、即座にタイムラインを更新してリプライ数の変化などを反映
+          onUpdate();
+      }
+      // ▲▲▲ 新しいロジックはここまでです ▲▲▲
 
+    } catch (err: any) { 
+        toast.error(err.message); 
+    }
+  };
 
   const handleGenerateReply = async (originalPostContent: string | null) => {
     if (!loginUser) { toast.error('ログインしてください。'); return; }
@@ -323,10 +349,14 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
               <div className="post-item">
                 <div className="post-avatar">
                   <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()}>
-                    <img 
-                      src={post.user_profile_image_url || '/default-avatar.png'} 
-                      alt={`${post.user_name}のアバター`} 
-                    />
+                    {post.user_profile_image_url && post.user_profile_image_url.startsWith('http') ? (
+                       <img 
+                        src={post.user_profile_image_url} 
+                        alt={`${post.user_name}のアバター`} 
+                      />
+                    ) : (
+                      <InitialAvatar name={post.user_name} size={48} />
+                    )}
                   </Link>
                 </div>
                 <div className="post-body">
@@ -365,7 +395,8 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                     <OriginalPost post={post.original_post} />
                   )}
 
-                <div className="post-actions">
+
+                  <div className="post-actions">
                   <button onClick={(e) => { e.stopPropagation(); handleReplyButtonClick(post.post_id); }}>
                     <FaRegComment /> <span>{post.reply_count}</span>
                   </button>
@@ -443,9 +474,10 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                   </button>
                 </div>
 
+                
                 {/* インラインのリプライフォーム */}
                 {replyingToPostId === post.post_id && (
-                  <form onSubmit={(e) => { e.stopPropagation(); handleReplySubmit(e, post.post_id); }} onClick={e => e.stopPropagation()} style={{ marginTop: '15px' }}>
+                  <form onSubmit={(e) => { e.stopPropagation(); handleReplySubmit(e, post); }} onClick={e => e.stopPropagation()} style={{ marginTop: '15px' }}>
                     <textarea
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
@@ -453,7 +485,6 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>投�
                       style={{ width: '95%', height: '60px', padding: '8px', display: 'block', backgroundColor: '#203444', color: 'white', border: '1px solid #38444d' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
-                      {/* ▼▼▼ このbuttonのonClickを修正 ▼▼▼ */}
                       <button type="button" onClick={(e) => {e.stopPropagation(); handleGenerateReply(post.content)}} disabled={isGenerating}>
                         {isGenerating ? '生成中...' : '🤖 AIで返信を生成'}
                       </button>

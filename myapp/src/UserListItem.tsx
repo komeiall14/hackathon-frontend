@@ -1,8 +1,12 @@
+// src/UserListItem.tsx
+
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { UserProfileData } from './UserProfile'; // UserProfileの型定義を再利用
+import { UserProfileData } from './UserProfile';
+// ▼▼▼ 修正箇所 ▼▼▼
+import { InitialAvatar } from './InitialAvatar';
+// ▲▲▲ 修正ここまで ▲▲▲
 
-// このコンポーネントが受け取るプロパティの型を定義
 interface UserListItemProps {
   user: UserProfileData;
   onFollowToggle: (userToToggle: UserProfileData) => void;
@@ -12,18 +16,25 @@ export const UserListItem: React.FC<UserListItemProps> = ({ user, onFollowToggle
   return (
     <div className="user-list-item">
       <Link to={`/users/${user.firebase_uid}`} className="user-list-item-link">
-        <img 
-          src={user.profile_image_url || '/default-avatar.png'} 
-          alt={`${user.name}のアバター`} 
-          className="user-list-item-avatar"
-        />
+        {/* ▼▼▼ 修正箇所 ▼▼▼ */}
+        <div className="user-list-item-avatar">
+          {user.profile_image_url && user.profile_image_url.startsWith('http') ? (
+            <img 
+              src={user.profile_image_url} 
+              alt={`${user.name}のアバター`}
+              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}}
+            />
+          ) : (
+            <InitialAvatar name={user.name} size={48} />
+          )}
+        </div>
+        {/* ▲▲▲ 修正ここまで ▲▲▲ */}
         <div className="user-list-item-body">
           <span className="user-list-item-name">{user.name}</span>
           <p className="user-list-item-bio">{user.bio || ''}</p>
         </div>
       </Link>
       
-      {/* 自分のプロフィールでなければフォローボタンを表示 */}
       {!user.is_me && (
         <button 
           onClick={() => onFollowToggle(user)} 

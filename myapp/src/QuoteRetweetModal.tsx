@@ -1,15 +1,19 @@
+// src/QuoteRetweetModal.tsx
+
 import React, { useState } from 'react';
 import { Post } from './PostList';
 import toast from 'react-hot-toast';
 import { User as FirebaseUser } from "firebase/auth";
 import './QuoteRetweetModal.css';
+// ▼▼▼ 修正箇所 ▼▼▼
+import { InitialAvatar } from './InitialAvatar';
+// ▲▲▲ 修正ここまで ▲▲▲
 
-// ▼▼▼ この interface を修正 ▼▼▼
 interface QuoteRetweetModalProps {
   post: Post;
   loginUser: FirebaseUser | null;
   onClose: () => void;
-  onQuoteSuccess: (newQuotePost: Post) => void; // ★ onUpdateの代わりの新しいprops
+  onQuoteSuccess: (newQuotePost: Post) => void;
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
@@ -18,7 +22,6 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ▼▼▼ この handleSubmit 関数を修正 ▼▼▼
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
@@ -49,10 +52,9 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
         throw new Error('引用リツイートに失敗しました。');
       }
 
-      const newQuotePost: Post = await response.json(); // ★ 新しい投稿データを取得
-
+      const newQuotePost: Post = await response.json();
       toast.success('引用リツイートしました！');
-      onQuoteSuccess(newQuotePost); // ★ 新しいコールバックを呼ぶ
+      onQuoteSuccess(newQuotePost);
       onClose();
 
     } catch (err: any) {
@@ -73,7 +75,13 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
           <form onSubmit={handleSubmit}>
             <div className="qt-form-body">
                 <div className="post-avatar">
-                    <img src={loginUser?.photoURL || '/default-avatar.png'} alt="your avatar" />
+                  {/* ▼▼▼ 修正箇所(1/2) ▼▼▼ */}
+                  {loginUser?.photoURL && loginUser.photoURL.startsWith('http') ? (
+                    <img src={loginUser.photoURL} alt="your avatar" />
+                  ) : (
+                    <InitialAvatar name={loginUser?.displayName || ""} size={48} />
+                  )}
+                  {/* ▲▲▲ 修正ここまで ▲▲▲ */}
                 </div>
                 <textarea
                     value={comment}
@@ -85,7 +93,19 @@ export const QuoteRetweetModal: React.FC<QuoteRetweetModalProps> = ({ post, logi
 
             <div className="original-post-container-qt">
               <div className="original-post-header-qt">
-                <img src={post.user_profile_image_url || '/default-avatar.png'} alt="original author avatar" />
+                {/* ▼▼▼ 修正箇所(2/2) ▼▼▼ */}
+                <div style={{ marginRight: '8px' }}>
+                  {post.user_profile_image_url && post.user_profile_image_url.startsWith('http') ? (
+                    <img 
+                      src={post.user_profile_image_url} 
+                      alt="original author avatar"
+                      style={{width: '20px', height: '20px', borderRadius: '50%'}}
+                     />
+                  ) : (
+                    <InitialAvatar name={post.user_name} size={20} />
+                  )}
+                </div>
+                {/* ▲▲▲ 修正ここまで ▲▲▲ */}
                 <strong>{post.user_name}</strong>
                 <span className="timestamp"> - {new Date(post.created_at).toLocaleString()}</span>
               </div>
