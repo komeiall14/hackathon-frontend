@@ -35,7 +35,7 @@
  .flame {
     position: fixed; /* ← 画面に位置を固定（スクロールで動かない） */
     bottom: 30px;
-    width: 150px;
+    width: 225px;
     height: 60px;  /* ← 高さを半分に */
     background: radial-gradient(circle, rgba(255,100,0,0.8) 0%, rgba(224,36,94,0.4) 40%, rgba(224,36,94,0) 70%);
     border-radius: px;
