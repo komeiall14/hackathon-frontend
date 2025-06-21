@@ -101,6 +101,7 @@ function App() {
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<{score: number, review: string} | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [lastExplanationAttempt, setLastExplanationAttempt] = useState('');
 
   useEffect(() => {
     // showExplanationButton の値が変化するたびに、その値をコンソールに出力します
@@ -465,16 +466,20 @@ function App() {
         }, 1000);
     }, 3000);
 
+    setLastExplanationAttempt('');
+
     //8秒後に「弁明する」ボタンを表示させるタイマー
     setTimeout(() => {
         setShowExplanationButton(true);
-    }, 8000); // 8000ミリ秒 = 8秒
+    }, 6000); // 8000ミリ秒 = 8秒
   };
 
   // 弁明をバックエンドに送って評価してもらう関数
 
   const handleExplanationSubmit = async (explanationText: string) => {
     if (!experienceTargetPost || !loginUser) return;
+
+    setLastExplanationAttempt(explanationText);
     
     setIsEvaluating(true);
     setIsExplanationModalOpen(false);
@@ -525,6 +530,7 @@ function App() {
       
       if (result.score >= 70) {
         stopExperience();
+        setLastExplanationAttempt('');
       } else {
         toast.error("残念ながら、弁明は受け入れられませんでした。");
       }
@@ -737,6 +743,7 @@ function App() {
       {isExplanationModalOpen && experienceTargetPost && (
         <ExplanationModal
             originalPost={experienceTargetPost}
+            initialText={lastExplanationAttempt}
             onClose={() => setIsExplanationModalOpen(false)}
             onSubmit={handleExplanationSubmit}
             isSubmitting={isEvaluating}
@@ -747,7 +754,15 @@ function App() {
         <EvaluationResultModal
             score={evaluationResult.score}
             review={evaluationResult.review}
-            onClose={() => setIsEvaluationModalOpen(false)}
+            onClose={() => {
+              setIsEvaluationModalOpen(false);
+              // 不合格だった場合、弁明モーダルを再度開く
+              if (evaluationResult.score < 70) {
+                setTimeout(() => {
+                  setIsExplanationModalOpen(true);
+                }, 200); // モーダルが閉じるアニメーションを待つ
+              }
+            }}
         />
       )}
 

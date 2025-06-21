@@ -4,25 +4,24 @@ import { Post } from './PostList';
 import './QuoteRetweetModal.css'; 
 
 interface ExplanationModalProps {
-  originalPost: Post;
-  onClose: () => void;
-  // 提出する際に、弁明のテキストだけを渡すようにします
-  onSubmit: (explanationText: string) => void; 
-  isSubmitting: boolean;
-}
+    originalPost: Post;
+    onClose: () => void;
+    onSubmit: (explanationText: string) => void; 
+    isSubmitting: boolean;
+    initialText?: string; // 前回の弁明内容を受け取るためのプロパティ
+  }
 
-export const ExplanationModal: React.FC<ExplanationModalProps> = ({ originalPost, onClose, onSubmit, isSubmitting }) => {
-  const [explanation, setExplanation] = useState('');
+export const ExplanationModal: React.FC<ExplanationModalProps> = ({ originalPost, onClose, onSubmit, isSubmitting, initialText }) => {
+    const [explanation, setExplanation] = useState(initialText || '');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!explanation.trim()) {
-      toast.error('弁明を入力してください。');
-      return;
-    }
-    // 親コンポーネント(App.tsx)に弁明テキストを渡して、API呼び出しを依頼します
-    onSubmit(explanation);
-  };
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!explanation.trim()) {
+        toast.error('弁明を入力してください。');
+        return;
+        }
+        onSubmit(explanation);
+    };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
