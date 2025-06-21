@@ -24,6 +24,7 @@ import { ExplanationModal } from './ExplanationModal';
 import { EvaluationResultModal } from './EvaluationResultModal'; 
 import { InitialAvatar } from './InitialAvatar';
 import { UserProfileData } from './UserProfile'; 
+import { FlameEffect } from './FlameEffect';
 
 
 interface User {
@@ -102,6 +103,7 @@ function App() {
   const [evaluationResult, setEvaluationResult] = useState<{score: number, review: string} | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [lastExplanationAttempt, setLastExplanationAttempt] = useState('');
+  const [showStopButton, setShowStopButton] = useState(false);
 
   useEffect(() => {
     // showExplanationButton の値が変化するたびに、その値をコンソールに出力します
@@ -380,6 +382,7 @@ function App() {
     setExperienceMode('none');
     setExperienceTargetPost(null);
     setShowExplanationButton(false); 
+    setShowStopButton(false);    
 
     if (currentMode === 'buzz') toast.success("バズり体験が終了しました。");
     if (currentMode === 'flame') toast.success("炎上が鎮火しました。");
@@ -388,9 +391,14 @@ function App() {
   // バズり体験を開始する関数
   const startBuzzExperience = (post: Post) => {
     if (!loginUser) return;
+    setShowStopButton(false);
     setExperienceMode('buzz');
     setExperienceTargetPost(post);
     onPostSuccess(post);
+
+    setTimeout(() => {
+      setShowStopButton(true);
+    }, 3000);
 
     toast.success("投稿がシェアされ始めました！", { duration: 3000 });
 
@@ -427,16 +435,23 @@ function App() {
           }
       }, 1000); 
 
-    }, 3000);
+    }, 2500);
   };
+
   // 炎上体験を開始する関数
   const startFlameExperience = (post: Post) => {
     if (!loginUser) return;
+    setShowStopButton(false);
     setExperienceMode('flame');
     setExperienceTargetPost(post);
     onPostSuccess(post);
 
-    toast.error("投稿が多くの人の目に留まり、様々な意見が寄せられ始めています...", { duration: 3000 });
+  // ★ 5秒後にボタンを表示する
+    setTimeout(() => {
+        setShowStopButton(true);
+    }, 6000);
+
+    toast.error("投稿が多くの人の目に留まり、様々な意見が寄せられ始めています...", { duration: 2500 });
 
     // 5秒後に炎上(ボットのアクション)を開始
     setTimeout(() => {
@@ -464,7 +479,7 @@ function App() {
                 console.error("Bot action failed:", err);
             }
         }, 1000);
-    }, 3000);
+    }, 2500);
 
     setLastExplanationAttempt('');
 
@@ -558,6 +573,7 @@ function App() {
 
   return (
     <>
+      {experienceMode === 'flame' && <FlameEffect />}
       <div className="app-container">
         <Toaster position="top-center" />
         <div className="top-right-auth">
@@ -729,7 +745,7 @@ function App() {
         </aside>
       </div>
 
-      {experienceMode !== 'none' && (
+      {experienceMode !== 'none' && showStopButton && (
         <div className={`experience-control-container ${experienceMode === 'flame' ? 'flame' : ''}`}>
             <span className="experience-control-label">
                 {experienceMode === 'buzz' ? '🎉 バズり体験中 🎉' : '🔥 炎上体験中 🔥'}

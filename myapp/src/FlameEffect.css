@@ -1,0 +1,83 @@
+/* 炎上エフェクト用のスタイル */
+.flame-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* エフェクトがクリックなどの操作を妨げないようにする */
+    z-index: 1000;
+    overflow: hidden;
+    box-shadow: inset 0 0 150px 50px rgba(224, 36, 94, 0.5); /* 画面全体に赤いぼんやりとした光を追加 */
+  }
+  
+  @keyframes flame-flicker {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 0.6;
+    }
+    25% {
+      opacity: 0.8;
+    }
+    50% {
+      transform: translateY(-80vh) scale(1.5);
+      opacity: 0.2;
+    }
+    75% {
+      opacity: 0.7;
+    }
+    100% {
+      transform: translateY(-100vh) scale(0.5);
+      opacity: 0;
+    }
+  }
+  
+ .flame {
+    position: fixed; /* ← 画面に位置を固定（スクロールで動かない） */
+    bottom: 30px;
+    width: 150px;
+    height: 60px;  /* ← 高さを半分に */
+    background: radial-gradient(circle, rgba(255,100,0,0.8) 0%, rgba(224,36,94,0.4) 40%, rgba(224,36,94,0) 70%);
+    border-radius: px;
+    /* ↓ 動きを止めるためアニメーション関連のプロパティを削除 */
+    /* animation-name: flame-flicker; */
+    /* animation-timing-function: linear; */
+    /* animation-iteration-count: infinite; */
+  }
+  
+  .flame.f1 {
+    left: 5%;
+    animation-duration: 8s;
+    animation-delay: 0s;
+  }
+  
+  .flame.f2 {
+    left: 25%;
+    animation-duration: 10s;
+    animation-delay: 2s;
+    width: 100px;
+    height: 100px;
+  }
+  
+  .flame.f3 {
+    left: 45%;
+    animation-duration: 7s;
+    animation-delay: 1s;
+    width: 200px;
+    height: 200px;
+  }
+  
+  .flame.f4 {
+    left: 65%;
+    animation-duration: 9s;
+    animation-delay: 3s;
+  }
+  
+  .flame.f5 {
+    left: 85%;
+    animation-duration: 6s;
+    animation-delay: 0.5s;
+    width: 120px;
+    height: 120px;
+  }
+  
