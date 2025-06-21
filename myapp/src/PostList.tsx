@@ -7,6 +7,7 @@ import { QuoteRetweetModal } from './QuoteRetweetModal';
 import { OriginalPost } from './OriginalPost';
 import { OGPPreview } from './OGPPreview';
 import { InitialAvatar } from './InitialAvatar'; 
+import { ParentPostLink } from './ParentPostLink'; 
 
 export interface Post {
   post_id: string;
@@ -27,6 +28,7 @@ export interface Post {
   bad_count: number;        
   is_badded_by_me: boolean; 
   original_post?: Post;
+  parent_post?: Post; 
 }
 
 interface PostListProps {
@@ -335,6 +337,10 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>æŠ•ç¨
                 </div>
               )}
 
+              {post.parent_post && (
+                  <ParentPostLink post={post.parent_post} />
+              )}
+              
               <div className="post-item">
                 <div className="post-avatar">
                   <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()}>

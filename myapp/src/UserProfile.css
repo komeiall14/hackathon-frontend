@@ -135,3 +135,28 @@
   .dm-btn:hover {
     background-color: rgba(29, 161, 242, 0.1); /* Twitterの青色に合わせる */
   }
+
+/* ファイルの末尾に追記 */
+.profile-tabs-container {
+    display: flex;
+    border-bottom: 1px solid #38444d;
+  }
+  
+  .profile-tab {
+    flex-grow: 1;
+    padding: 16px;
+    text-align: center;
+    color: #8899a6;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .profile-tab:hover {
+    background-color: rgba(231, 233, 234, 0.1);
+  }
+  
+  .profile-tab.active {
+    color: #ffffff;
+    border-bottom: 2px solid #1da1f2;
+  }

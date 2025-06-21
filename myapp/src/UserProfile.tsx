@@ -30,12 +30,18 @@ export const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [userReplies, setUserReplies] = useState<Post[]>([]); 
+  const [posts, setPosts] = useState<Post[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [isLoadingReplies, setIsLoadingReplies] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loginUser, setLoginUser] = useState<FirebaseUser | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [authChecked, setAuthChecked] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<'posts' | 'replies'>('posts');
 
   useEffect(() => {
     // isLoadingがfalseになった（=読み込みが完了した）瞬間にスクロールする
@@ -51,6 +57,7 @@ export const UserProfile: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
   const fetchUserProfile = useCallback(async (currentUser: FirebaseUser | null) => {
     if (!userId) return;
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -86,6 +93,29 @@ export const UserProfile: React.FC = () => {
       toast.error(err.message);
     }
   }, [userId]);
+
+  const fetchUserReplies = useCallback(async (currentUser: FirebaseUser | null) => {
+    if (!userId) return;
+    setIsLoadingReplies(true); // 返信の読み込み開始
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (currentUser) {
+        const token = await currentUser.getIdToken();
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+      // ユーザーの返信を取得するAPIを呼び出す
+      const response = await fetch(`${BACKEND_API_URL}/api/users/${userId}/replies`, { headers });
+      if (!response.ok) { throw new Error('返信の取得に失敗しました。'); }
+      const data: Post[] = await response.json();
+      setUserReplies(data);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setIsLoadingReplies(false); // 返信の読み込み完了
+    }
+  }, [userId]);
+
   const handleFollowToggle = async () => {
     if (!loginUser || !userProfile) { toast.error("ログインが必要です。"); return; }
     
@@ -153,17 +183,29 @@ export const UserProfile: React.FC = () => {
   };
 
   useEffect(() => {
-    // 認証チェックが完了していなければ、データ取得を開始しない
-    if (!authChecked) {
-      return;
-    }
+    // 認証情報が確認できてから実行
+    if (!authChecked) return;
+
     const fetchData = async () => {
-      setIsLoading(true);
-      await Promise.all([fetchUserProfile(loginUser), fetchUserPosts(loginUser)]);
-      setIsLoading(false);
+      setIsLoading(true); // ページ全体のローディングを開始
+      await fetchUserProfile(loginUser);
+      setIsLoading(false); // ページ全体のローディングを完了
     };
     fetchData();
-  }, [authChecked, loginUser, fetchUserProfile, fetchUserPosts]); 
+  }, [authChecked, loginUser, userId]); // ユーザーIDが変わった時も再取得
+
+  useEffect(() => {
+    // プロフィールが読み込めていない場合は何もしない
+    if (!userProfile) return;
+
+    if (activeTab === 'posts') {
+      // 投稿タブが選択されたら投稿を取得
+      fetchUserPosts(loginUser);
+    } else {
+      // 返信タブが選択されたら返信を取得
+      fetchUserReplies(loginUser);
+    }
+  }, [userProfile, activeTab, loginUser]);
 
 
   const handleProfileUpdate = () => {
@@ -249,13 +291,29 @@ export const UserProfile: React.FC = () => {
         </div>
       </div>
 
+      <div className="profile-tabs-container">
+        <div 
+          className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('posts')}
+        >
+          投稿
+        </div>
+        <div 
+          className={`profile-tab ${activeTab === 'replies' ? 'active' : ''}`}
+          onClick={() => setActiveTab('replies')}
+        >
+          返信
+        </div>
+      </div>
+      
       <div className="profile-posts">
-        <h3>投稿一覧</h3>
         <PostList 
-            posts={userPosts} 
-            isLoading={false} 
+            // activeTabに応じて表示するデータを切り替え
+            posts={activeTab === 'posts' ? userPosts : userReplies} 
+            // activeTabに応じてローディング状態を切り替え
+            isLoading={activeTab === 'posts' ? isLoadingPosts : isLoadingReplies} 
             error={null} 
-            onUpdate={() => fetchUserPosts(loginUser)} 
+            onUpdate={handleProfileUpdate} 
             loginUser={loginUser} 
             onUpdateSinglePost={handleUpdateSinglePostInProfile}
         />

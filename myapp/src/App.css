@@ -745,3 +745,20 @@ h1, h2 {
 .user-management-name {
   font-weight: bold;
 }
+
+/* ファイルの末尾に追記 */
+.reply-parent-container {
+  padding: 0 15px;
+  position: relative;
+}
+
+/* 親投稿とリプライ投稿を繋ぐ縦線 */
+.reply-parent-container::after {
+  content: '';
+  position: absolute;
+  top: 80px;
+  left: 15px;
+  bottom: -10px;
+  width: 2px;
+  background-color: \#38444d;
+  }

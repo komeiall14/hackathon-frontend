@@ -1,0 +1,40 @@
+.parent-post-link-wrapper {
+    text-decoration: none;
+    color: inherit;
+    display: block; /* リンクのクリック範囲をブロック全体に広げる */
+    transition: background-color 0.2s;
+  }
+  
+  /* ホバー時に背景色を少し変えて、クリック可能であることを示す */
+  .parent-post-link-wrapper:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+  
+  .parent-post-link-container {
+    padding: 0 15px 10px 33px; /* アイコンの左からの距離に合わせる */
+    position: relative;
+  }
+  
+  .reply-line {
+    position: absolute;
+    left: 33px; /* アイコンの中心に合わせる */
+    top: -12px; /* 上の投稿のアバター下部から伸ばす */
+    bottom: 0;
+    width: 2px;
+    background-color: #38444d;
+    z-index: -1;
+  }
+  
+  .replying-to-text {
+    margin: 0;
+    font-size: 15px;
+    color: #8899a6;
+  }
+  
+  .replying-to-text .user-link {
+    color: #1da1f2;
+    text-decoration: none;
+  }
+  .replying-to-text .user-link:hover {
+    text-decoration: underline;
+  }

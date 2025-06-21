@@ -391,7 +391,7 @@ function App() {
     setExperienceTargetPost(post);
     onPostSuccess(post);
 
-    toast.success("投稿がシェアされ始めました！", { duration: 5000 });
+    toast.success("投稿がシェアされ始めました！", { duration: 3000 });
 
     // 5秒後にバズりを開始
     setTimeout(() => {
@@ -426,7 +426,7 @@ function App() {
           }
       }, 1000); 
 
-    }, 5000);
+    }, 3000);
   };
   // 炎上体験を開始する関数
   const startFlameExperience = (post: Post) => {
@@ -435,7 +435,7 @@ function App() {
     setExperienceTargetPost(post);
     onPostSuccess(post);
 
-    toast.error("投稿が多くの人の目に留まり、様々な意見が寄せられ始めています...", { duration: 5000 });
+    toast.error("投稿が多くの人の目に留まり、様々な意見が寄せられ始めています...", { duration: 3000 });
 
     // 5秒後に炎上(ボットのアクション)を開始
     setTimeout(() => {
@@ -463,7 +463,7 @@ function App() {
                 console.error("Bot action failed:", err);
             }
         }, 1000);
-    }, 5000);
+    }, 3000);
 
     //8秒後に「弁明する」ボタンを表示させるタイマー
     setTimeout(() => {
