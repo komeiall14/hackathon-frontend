@@ -40,6 +40,7 @@ interface PostListProps {
   title?: string; 
   onPostCreated?: (newPost: Post) => void; 
   onUpdateSinglePost: (updatedPost: Post) => void; 
+  isDetailPage?: boolean;
 }
 
 const BACKEND_API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
@@ -52,7 +53,7 @@ const extractFirstUrl = (text: string | null): string | null => {
   return match ? match[0] : null;
 };
 
-export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser, title, onPostCreated, onUpdateSinglePost }) => {
+export const PostList: React.FC<PostListProps> = ({ posts, isLoading, error, onUpdate, loginUser, title, onPostCreated, onUpdateSinglePost, isDetailPage = false }) => {
   
   const navigate = useNavigate();
 
@@ -337,10 +338,12 @@ if (isLoading && posts.length === 0) return <div style={{padding: '20px'}}>æŠ•ç¨
                 </div>
               )}
 
-              {post.parent_post && (
-                  <ParentPostLink post={post.parent_post} />
+              {post.parent_post && !isDetailPage && (
+                  <div className="reply-parent-container">
+                    <OriginalPost post={post.parent_post} />
+                  </div>
               )}
-              
+
               <div className="post-item">
                 <div className="post-avatar">
                   <Link to={`/users/${post.user_id}`} onClick={e => e.stopPropagation()}>

@@ -90,20 +90,22 @@ export const PostDetailPage: React.FC = () => {
         <h2 style={{margin: 0, padding: 0, border: 'none'}}>投稿</h2>
       </div>
 
+      {/* ▼▼▼ [修正箇所] ここで親投稿を表示するロジックは残す ▼▼▼ */}
       {post.parent_post && (
         <div className="reply-parent-container">
-          {/* ParentPostLinkの代わりにOriginalPostを使って親投稿を全文表示 */}
           <OriginalPost post={post.parent_post} />
         </div>
       )}
 
+      {/* ▼▼▼ [修正箇所] PostListにisDetailPageプロパティを追加 ▼▼▼ */}
       <PostList 
         posts={[post]} 
         isLoading={false} 
         error={null}
         onUpdate={() => fetchData(loginUser)}
         loginUser={loginUser}
-        onUpdateSinglePost={handleUpdateSinglePostInDetail} 
+        onUpdateSinglePost={handleUpdateSinglePostInDetail}
+        isDetailPage={true} 
       />
       
       <div style={{borderTop: '10px solid #38444d'}}>

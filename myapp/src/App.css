@@ -746,7 +746,6 @@ h1, h2 {
   font-weight: bold;
 }
 
-/* ファイルの末尾に追記 */
 .reply-parent-container {
   padding: 0 15px;
   position: relative;
@@ -756,9 +755,9 @@ h1, h2 {
 .reply-parent-container::after {
   content: '';
   position: absolute;
-  top: 80px;
-  left: 15px;
-  bottom: -10px;
+  top: 65px;      
+  left: 20px;     
+  bottom: -15px;  
   width: 2px;
-  background-color: \#38444d;
-  }
+  background-color: #38444d;
+}
