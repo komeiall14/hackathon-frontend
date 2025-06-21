@@ -20,7 +20,7 @@ export const OriginalPost: React.FC<OriginalPostProps> = ({ post }) => {
     if (post.created_at && !isNaN(date.getTime())) {
       return date.toLocaleString();
     }
-    return '日付情報なし'; 
+    return '元ツイートが削除されました'; 
   };
 
   return (
