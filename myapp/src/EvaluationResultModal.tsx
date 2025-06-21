@@ -64,29 +64,37 @@ export const EvaluationResultModal: React.FC<EvaluationResultModalProps> = ({ sc
             </p>
           )}
         </div>
-        <button 
-            onClick={onClose} 
-            style={{
-                display: 'block', // ブロック要素として扱う
-                width: 'fit-content', // 中身のテキストに合わせた幅にする
-                margin: '20px auto 0 auto', // 上に余白、左右は自動で中央寄せ
-                padding: '10px 30px', // 上下の余白を確保し、左右を広めに
-                backgroundColor: '#38444d', // 背景色を少し明るいグレーに
-                color: 'white',
-                border: 'none',
-                borderRadius: '20px', // 角を丸くする
-                fontSize: '15px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s' // ホバー時のアニメーション
-            }}
-            // マウスが乗った時のスタイル
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#536471'}
-            // マウスが離れた時のスタイル
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#38444d'}
+
+        <div 
+          className="modal-footer" 
+          style={{
+            marginTop: '20px',
+            paddingTop: '20px',
+            borderTop: '1px solid #38444d', // 区切り線を追加
+            display: 'flex',
+            justifyContent: 'flex-end' // Flexboxで要素を右端に配置
+          }}
         >
-            閉じる
-        </button>
+          <button 
+              onClick={onClose} 
+              style={{
+                  // margin と display を削除し、レイアウトは親の div に任せる
+                  padding: '10px 30px',
+                  backgroundColor: '#38444d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '20px',
+                  fontSize: '15px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#536471'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#38444d'}
+          >
+              閉じる
+          </button>
+        </div>
 
       </div>
     </div>
