@@ -1,0 +1,59 @@
+/* src/SpaceLobby.css */
+
+.space-lobby-container {
+    padding: 20px;
+  }
+  
+  .space-item {
+    padding: 15px;
+    border: 1px solid #38444d;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .space-item:hover {
+    background-color: #1a2938;
+  }
+  
+  .space-item-content h4 {
+    margin: 0;
+    font-size: 1.1em;
+  }
+  
+  .space-item-content p {
+    font-size: 14px;
+    color: #8899a6;
+    margin: 5px 0 0 0;
+  }
+  
+  /* ★★★ LIVEインジケーターのスタイル ★★★ */
+  .space-topic-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .live-indicator {
+    width: 10px;
+    height: 10px;
+    background-color: #1da1f2;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(0.9);
+      box-shadow: 0 0 0 0 rgba(29, 161, 242, 0.7);
+    }
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 10px rgba(29, 161, 242, 0);
+    }
+    100% {
+      transform: scale(0.9);
+      box-shadow: 0 0 0 0 rgba(29, 161, 242, 0);
+    }
+  }

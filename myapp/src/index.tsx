@@ -5,6 +5,7 @@ import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Routes, Route } from 'react-router-dom'; 
+import { SpaceLobby } from './SpaceLobby'; 
 import { SpacePage } from './SpacePage';
 
 import { PostList } from './PostList'; 
@@ -32,7 +33,8 @@ root.render(
           {/* URLが "/" の場合にOutletに表示される内容 */}
           <Route index element={<Home />} /> 
 
-          <Route path="space" element={<SpacePage />} />
+          <Route path="spaces" element={<SpaceLobby />} />
+          <Route path="spaces/:spaceId" element={<SpacePage />} />
 
           
           {/* URLが "/messages" や "/messages/..." の場合にOutletに表示される内容 */}

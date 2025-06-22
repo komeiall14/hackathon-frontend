@@ -10,7 +10,7 @@ import { PageHeader } from './PageHeader';
 // NotificationResponseの型定義
 export interface NotificationResponse {
   id: string;
-  type: 'like' | 'reply' | 'follow' | 'quote_retweet';
+  type: 'like' | 'reply' | 'follow' | 'quote_retweet' | 'space_started';
   actor: UserProfileData;
   entity_id: string | null;
   is_read: boolean;

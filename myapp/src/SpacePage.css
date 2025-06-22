@@ -85,3 +85,135 @@
     padding: 10px 20px;
     border-radius: 20px;
   }
+
+/* SpacePage.css に追記 */
+
+.space-main-content {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    border-left: 1px solid #38444d;
+    border-right: 1px solid #38444d;
+}
+
+.space-participants-list {
+    width: 250px;
+    min-width: 220px;
+    border-right: 1px solid #38444d;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.space-participants-list h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.space-participants-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.space-participants-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #2f3336;
+}
+
+.participant-info small {
+    color: #8899a6;
+    font-size: 13px;
+}
+
+.role-button {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 15px;
+    border: 1px solid #8899a6;
+    background-color: transparent;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.role-button.promote:hover {
+    background-color: rgba(29, 161, 242, 0.2);
+    border-color: #1da1f2;
+}
+.role-button.demote:hover {
+    background-color: rgba(224, 36, 94, 0.2);
+    border-color: #e0245e;
+}
+
+
+.space-chat-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 既存の .space-chat-window は不要になるので削除または .space-chat-area に置き換える */
+.space-chat-window {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* この中の border-left/right は .space-main-content に移動したので削除 */
+}
+
+.system-message {
+    text-align: center;
+    color: #8899a6;
+    font-size: 13px;
+    padding: 5px 0;
+}
+
+.space-end-button {
+    background-color: #e0245e;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* SpacePage.css に追記 */
+
+/* 既存の .space-participants-list li スタイルを調整 */
+.space-participants-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #2f3336;
+}
+
+/* ★★★ 以下、新しいスタイルを追記 ★★★ */
+
+.participant-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    flex-grow: 1; /* リンクエリアが可能な限り広がるように */
+}
+
+.participant-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.participant-name {
+    font-weight: bold;
+}
+
+.participant-role {
+    color: #8899a6;
+    font-size: 13px;
+}

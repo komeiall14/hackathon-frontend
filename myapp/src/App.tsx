@@ -25,6 +25,8 @@ import { EvaluationResultModal } from './EvaluationResultModal';
 import { InitialAvatar } from './InitialAvatar';
 import { UserProfileData } from './UserProfile'; 
 import { FlameEffect } from './FlameEffect';
+import { NotificationResponse } from './NotificationsPage';
+import { UserAvatar } from './UserAvatar';
 
 
 interface User {
@@ -33,6 +35,13 @@ interface User {
   age: number | null;
   firebase_uid: string | null;
   profile_image_url: string | null; 
+}
+
+interface ActiveSpace {
+  id: string;
+  host_id: string;
+  host_name: string;
+  topic: string;
 }
 
 const PAGE_SIZE = 20; // 1ページあたりの投稿数
@@ -51,6 +60,7 @@ function App() {
   const [botTopic, setBotTopic] = useState<string>(''); 
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [newSpaceCount, setNewSpaceCount] = useState(0);
   const location = useLocation();
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true); // さらに読み込む投稿があるか
@@ -571,6 +581,111 @@ function App() {
     window.scrollTo(0, 0);
   };
 
+  // 通知ポーリング用のuseEffectを修正
+  useEffect(() => {
+    if (!loginUser) {
+        setUnreadCount(0);
+        setNewSpaceCount(0); // ログアウト時にスペース通知もリセット
+        return;
+    }
+
+    const fetchNotifications = async () => {
+      try {
+        const token = await loginUser.getIdToken();
+        const response = await fetch(`${BACKEND_API_URL}/api/notifications`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+
+        const data: NotificationResponse[] = await response.json();
+        
+        // --- 従来の通知(いいね、返信など)の未読件数を更新 ---
+        const generalNotifications = data.filter(n => n.type !== 'space_started');
+        const newUnreadCount = generalNotifications.filter(n => !n.is_read).length;
+        setUnreadCount(newUnreadCount);
+
+        // --- 新しいスペース通知の件数を計算 ---
+        const spaceNotifications = data.filter(n => n.type === 'space_started');
+        // 最後にスペース一覧を見た時刻をlocalStorageから取得
+        const lastViewTime = localStorage.getItem('lastSpacesViewTime');
+        
+        let unseenSpaces = 0;
+        if (lastViewTime) {
+          // 最後に見てから後に作成されたスペース通知をカウント
+          unseenSpaces = spaceNotifications.filter(n => new Date(n.created_at) > new Date(lastViewTime)).length;
+        } else {
+          // まだ一度も見ていない場合は、全てのスペース通知をカウント
+          unseenSpaces = spaceNotifications.length;
+        }
+        setNewSpaceCount(unseenSpaces);
+
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    };
+
+    fetchNotifications(); 
+    
+    // ポーリング間隔
+    const interval = experienceMode !== 'none' ? 5000 : 30000;
+    const intervalId = setInterval(fetchNotifications, interval); 
+
+    return () => clearInterval(intervalId);
+
+
+  }, [loginUser, experienceMode]); 
+
+    const handleSpacesLinkClick = () => {
+    // バッジのカウントをリセット
+    setNewSpaceCount(0);
+    // 現在時刻を「最終閲覧時刻」としてlocalStorageに保存
+    localStorage.setItem('lastSpacesViewTime', new Date().toISOString());
+  };
+
+  const [activeHostIds, setActiveHostIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchActiveHosts = async () => {
+      // ログインしていない場合は、そもそもリクエストを送らない
+      if (!loginUser) {
+        setActiveHostIds(new Set()); // ホストリストをクリア
+        return;
+      }
+
+      try {
+        // 認証に必要なIDトークンを取得
+        const token = await loginUser.getIdToken();
+
+        // fetchリクエストにAuthorizationヘッダーを追加
+        const response = await fetch(`${BACKEND_API_URL}/api/spaces/active`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          // 401エラーの場合はコンソールにエラーを出す
+          if (response.status === 401) {
+            console.error("Failed to fetch active hosts: Unauthorized (401). Check if token is valid.");
+          }
+          return;
+        }
+        
+        const activeSpaces: ActiveSpace[] = await response.json();
+        const hostIds = new Set(activeSpaces.map(space => space.host_id));
+        setActiveHostIds(hostIds);
+
+      } catch (error) {
+        console.error("Failed to fetch active hosts:", error);
+      }
+    };
+
+    fetchActiveHosts();
+    const intervalId = setInterval(fetchActiveHosts, 20000);
+
+    return () => clearInterval(intervalId);
+  }, [loginUser]); // ★★★ 依存配列にloginUserを追加 ★★★
+
   return (
     <>
       {experienceMode === 'flame' && <FlameEffect />}
@@ -641,9 +756,14 @@ function App() {
               <span style={{ marginLeft: '16px' }}>ブックマーク</span>
           </Link>
 
-          <Link to="/space" className="nav-link">
+          <Link to="/spaces" className="nav-link" onClick={handleSpacesLinkClick}>
+            <div className="nav-link-icon-wrapper">
               <FaUsers />
-              <span style={{ marginLeft: '16px' }}>スペース</span>
+              {newSpaceCount > 0 && (
+                <span className="notification-badge">{newSpaceCount > 99 ? '99+' : newSpaceCount}</span>
+              )}
+            </div>
+            <span style={{ marginLeft: '16px' }}>スペース</span>
           </Link>
 
           
@@ -699,6 +819,7 @@ function App() {
               isLoading: isLoading && posts.length === 0,
               error,
               hasMore,
+              activeHostIds,
               bottomRef: ref,
               onPostCreation: handlePostCreation, 
               onUpdateSinglePost: handleUpdateSinglePost,
